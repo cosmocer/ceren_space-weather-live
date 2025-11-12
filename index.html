@@ -6,7 +6,6 @@
   <title>Live Space Weather Dashboard</title>
   <style>
     :root{
-      /* Light theme */
       --bg:#f7f9fc; --card:#ffffff; --muted:#5a6b85; --text:#0b1b34; --accent:#0c6bff; --warn:#b15a00; --alert:#b00020; --ok:#1a7f37; --border:#e4e9f2;
     }
     *{box-sizing:border-box}
@@ -30,340 +29,198 @@
     .col-6{grid-column:span 6}
     .col-8{grid-column:span 8}
     .col-12{grid-column:span 12}
-
     canvas{width:100%; height:54px}
-
-    .aurora{display:grid; grid-template-columns:1fr; gap:8px}
     .aurora img{width:100%; border-radius:12px; border:1px solid var(--border)}
-
-    @media (max-width: 860px){
-      .col-3,.col-4,.col-6,.col-8{grid-column:span 12}
-      header{flex-direction:column; align-items:flex-start}
-    }
-    a{color:var(--accent); text-decoration:none}
-    a:hover{text-decoration:underline}
-    .imgcard img{width:100%; border:1px solid var(--border); border-radius:12px}
+    @media (max-width: 860px){.col-3,.col-4,.col-6,.col-8{grid-column:span 12}header{flex-direction:column;align-items:flex-start}}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
-  <header>
-    <h1>Live Space Weather</h1>
-    <div class="updated" id="last-updated">Loading…</div>
-  </header>
-  <div class="container">
-    <div class="grid">
-      <!-- Kp index -->
-      <section class="card col-3">
-        <h2>Planetary Kp</h2>
-        <div class="value" id="kp">—</div>
-        <div class="sub" id="kp-time">—</div>
-        <div class="sub" id="kp-dmax">—</div>
-        <div class="row" id="kp-badges"></div>
-      </section>
+<header>
+  <h1>Live Space Weather</h1>
+  <div class="updated" id="last-updated">Loading…</div>
+</header>
+<div class="container">
+  <div class="grid">
 
-      <!-- GOES X-ray -->
-      <section class="card col-3">
-        <h2>GOES X‑ray Flux</h2>
-        <div class="value" id="xray-class">—</div>
-        <div class="sub" id="xray-time">—</div>
-        <div class="sub" id="xray-dmax">—</div>
-        <canvas id="xray-spark"></canvas>
-        <div class="sub">Class scale: A < B < C < M < X</div>
-      </section>
+    <section class="card col-3">
+      <h2>Planetary Kp</h2>
+      <div class="value" id="kp">—</div>
+      <div class="sub" id="kp-time">—</div>
+      <div class="sub" id="kp-dmax">—</div>
+      <div class="row" id="kp-badges"></div>
+    </section>
 
-      <!-- Solar wind (ACE) -->
-      <section class="card col-6">
-        <h2>Solar Wind (ACE)</h2>
-        <div class="row">
-          <div>
-            <div class="sub">Speed (km/s)</div>
-            <div class="value" id="sw-speed">—</div>
-            <div class="sub" id="sw-speed-max">—</div>
-          </div>
-          <div>
-            <div class="sub">Density (cm⁻³)</div>
-            <div class="value" id="sw-density">—</div>
-            <div class="sub" id="sw-density-max">—</div>
-          </div>
-          <div>
-            <div class="sub">B<sub>z</sub> (nT)</div>
-            <div class="value" id="sw-bz">—</div>
-            <div class="sub" id="sw-bz-max">—</div>
-          </div>
-          <div>
-            <div class="sub">B (nT)</div>
-            <div class="value" id="sw-bt">—</div>
-            <div class="sub" id="sw-bt-max">—</div>
-          </div>
-        </div>
-        <canvas id="speed-spark"></canvas>
-        <div class="sub">ACE SWE, MAG 1‑minute feeds via NOAA SWPC.</div>
-      </section>
+    <section class="card col-3">
+      <h2>GOES X‑ray Flux</h2>
+      <div class="value" id="xray-class">—</div>
+      <div class="sub" id="xray-time">—</div>
+      <div class="sub" id="xray-dmax">—</div>
+      <canvas id="xray-spark"></canvas>
+      <div class="sub">Class scale: A < B < C < M < X</div>
+    </section>
 
-      <!-- Compact live metrics above OVATION -->
-      <section class="card col-12" id="compact-metrics">
-        <h2>Live Metrics</h2>
-        <div class="row">
-          <div class="chip">Vsw <span id="tiny-speed">—</span> km/s</div>
-          <div class="chip">Np <span id="tiny-density">—</span> cm⁻³</div>
-          <div class="chip">B <span id="tiny-bt">—</span> nT</div>
-          <div class="chip">Bz <span id="tiny-bz">—</span> nT</div>
-          <div class="chip">X‑ray <span id="tiny-xray">—</span></div>
-        </div>
-      </section>
+    <section class="card col-6">
+      <h2>Solar Wind (ACE)</h2>
+      <div class="row">
+        <div><div class="sub">Speed (km/s)</div><div class="value" id="sw-speed">—</div><div class="sub" id="sw-speed-max">—</div></div>
+        <div><div class="sub">Density (cm⁻³)</div><div class="value" id="sw-density">—</div><div class="sub" id="sw-density-max">—</div></div>
+        <div><div class="sub">B<sub>z</sub> (nT)</div><div class="value" id="sw-bz">—</div><div class="sub" id="sw-bz-max">—</div></div>
+        <div><div class="sub">B (nT)</div><div class="value" id="sw-bt">—</div><div class="sub" id="sw-bt-max">—</div></div>
+      </div>
+      <canvas id="speed-spark"></canvas>
+      <div class="sub">ACE SWE, MAG 1‑minute feeds via NOAA SWPC.</div>
+    </section>
 
-      <!-- Aurora -->
-      <section class="card col-8">
-        <h2>OVATION Aurora (Nowcast)</h2>
-        <div class="aurora">
-          <img id="aurora-nh" alt="Aurora forecast, Northern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg" />
-          <img id="aurora-sh" alt="Aurora forecast, Southern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg" />
-        </div>
-        <div class="sub">Images courtesy of NOAA SWPC. Green, yellow, red correspond to higher auroral probability.
-        </div>
-      </section>
+    <section class="card col-12" id="compact-metrics">
+      <h2>Live Metrics</h2>
+      <div class="row">
+        <div class="chip">Vsw <span id="tiny-speed">—</span> km/s</div>
+        <div class="chip">Np <span id="tiny-density">—</span> cm⁻³</div>
+        <div class="chip">B <span id="tiny-bt">—</span> nT</div>
+        <div class="chip">Bz <span id="tiny-bz">—</span> nT</div>
+        <div class="chip">X‑ray <span id="tiny-xray">—</span></div>
+      </div>
+    </section>
 
-      <!-- AE/AL (SuperMAG image) -->
-      <section class="card col-4 imgcard">
-        <h2>AE / AL (SuperMAG)</h2>
-        <img id="aeal-img" alt="AE/AL recent plot" src=""/>
-        <div class="sub">If the image does not load, open <a href="https://supermag.jhuapl.edu/mag/" target="_blank" rel="noopener">SuperMAG MAG</a>.
-        </div>
-      </section>
+    <section class="card col-8">
+      <h2>OVATION Aurora (Nowcast)</h2>
+      <div class="aurora">
+        <img id="aurora-nh" alt="Aurora forecast, Northern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg" />
+      </div>
+      <div class="sub">Image courtesy of NOAA SWPC.</div>
+    </section>
 
-      <!-- SYM-H -->
-      <section class="card col-4 imgcard">
-        <h2>SYM‑H (Kyoto WDC)</h2>
-        <img id="symh-img" alt="SYM-H recent plot" src=""/>
-        <div class="sub">If the image does not load, open <a href="https://wdc.kugi.kyoto-u.ac.jp/aeasy/index.html" target="_blank" rel="noopener">Kyoto WDC</a>.
-        </div>
-      </section>
+    <section class="card col-4">
+      <h2>SYM‑H (Kyoto WDC)</h2>
+      <img id="symh-img" alt="SYM-H recent plot" src="" style="width:100%; border:1px solid var(--border); border-radius:12px"/>
+      <div class="sub">If the image does not load, open <a href="https://wdc.kugi.kyoto-u.ac.jp/aeasy/index.html" target="_blank" rel="noopener">Kyoto WDC</a>.</div>
+    </section>
 
-      <!-- Alerts feed -->
-      <section class="card col-4">
-        <h2>NOAA Watches/Warnings/Alerts</h2>
-        <div id="alerts">Loading…</div>
-        <div class="sub">Source: <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">NOAA SWPC</a></div>
-      </section>
+    <section class="card col-4">
+      <h2>NOAA Watches/Warnings/Alerts</h2>
+      <div id="alerts">Loading…</div>
+      <div class="sub">Source: <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">NOAA SWPC</a></div>
+    </section>
 
-      <!-- Footer -->
-      <section class="card col-12">
-        <div class="sub">Auto‑refreshes every 60 seconds. Data from <a href="https://services.swpc.noaa.gov/" target="_blank" rel="noopener">services.swpc.noaa.gov</a>, SuperMAG, and Kyoto WDC. All times show your local timezone.</div>
-      </section>
-    </div>
+    <section class="card col-12">
+      <div class="sub">Auto‑refreshes every 60 seconds. Data from <a href="https://services.swpc.noaa.gov/" target="_blank" rel="noopener">services.swpc.noaa.gov</a> and Kyoto WDC.</div>
+    </section>
   </div>
-          <div>
-            <div class="sub">Density (cm⁻³)</div>
-            <div class="value" id="sw-density">—</div>
-          </div>
-          <div>
-            <div class="sub">B<sub>z</sub> (nT)</div>
-            <div class="value" id="sw-bz">—</div>
-          </div>
-          <div>
-            <div class="sub">B<sub>t</sub> (nT)</div>
-            <div class="value" id="sw-bt">—</div>
-          </div>
-        </div>
-        <canvas id="speed-spark"></canvas>
-        <div class="sub">ACE SWE, MAG 1‑minute feeds via NOAA SWPC.</div>
-      </section>
-
-      <!-- Aurora -->
-      <section class="card col-8">
-        <h2>OVATION Aurora (Nowcast)</h2>
-        <div class="aurora">
-          <img id="aurora-nh" alt="Aurora forecast, Northern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg" />
-          <img id="aurora-sh" alt="Aurora forecast, Southern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg" />
-        </div>
-        <div class="sub">Images courtesy of NOAA SWPC. Green, yellow, red correspond to higher auroral probability.
-        </div>
-      </section>
-
-      <!-- AE/AL (SuperMAG image) -->
-      <section class="card col-4 imgcard">
-        <h2>AE / AL (SuperMAG)</h2>
-        <img id="aeal-img" alt="AE/AL recent plot" src=""/>
-        <div class="sub">If the image does not load, open <a href="https://supermag.jhuapl.edu/mag/" target="_blank" rel="noopener">SuperMAG MAG</a>.
-        </div>
-      </section>
-
-      <!-- SYM-H -->
-      <section class="card col-4 imgcard">
-        <h2>SYM‑H (Kyoto WDC)</h2>
-        <img id="symh-img" alt="SYM-H recent plot" src=""/>
-        <div class="sub">If the image does not load, open <a href="https://wdc.kugi.kyoto-u.ac.jp/aeasy/index.html" target="_blank" rel="noopener">Kyoto WDC</a>.
-        </div>
-      </section>
-
-      <!-- Alerts feed -->
-      <section class="card col-4">
-        <h2>NOAA Watches/Warnings/Alerts</h2>
-        <div id="alerts">Loading…</div>
-        <div class="sub">Source: <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">NOAA SWPC</a></div>
-      </section>
-
-      <!-- Footer -->
-      <section class="card col-12">
-        <div class="sub">Auto‑refreshes every 60 seconds. Data from <a href="https://services.swpc.noaa.gov/" target="_blank" rel="noopener">services.swpc.noaa.gov</a>, SuperMAG, and Kyoto WDC. All times show your local timezone.</div>
-      </section>
-    </div>
-  </div>
-
+</div>
   <script>
+    // --- helpers ---
     const fmtTime = ts => new Date(ts).toLocaleString();
-
     function setUpdated(){
-      document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      const el = document.getElementById('last-updated');
+      if(el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
-
-    function badge(el, text, cls){
-      const s = document.createElement('span');
-      s.className = 'chip ' + (cls || '');
-      s.textContent = text; el.appendChild(s);
-    }
-
     function drawSpark(canvas, arr){
       const ctx = canvas.getContext('2d');
-      const w = canvas.width = canvas.clientWidth * devicePixelRatio;
-      const h = canvas.height = canvas.clientHeight * devicePixelRatio;
+      const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio||1);
+      const h = canvas.height = canvas.clientHeight * (window.devicePixelRatio||1);
       ctx.clearRect(0,0,w,h);
       if(!arr || !arr.length) return;
       const min = Math.min(...arr), max = Math.max(...arr);
-      const xstep = w / (arr.length - 1 || 1);
-      ctx.lineWidth = 2 * devicePixelRatio; ctx.beginPath();
+      const xstep = w / Math.max(1, arr.length-1);
+      ctx.lineWidth = 2 * (window.devicePixelRatio||1);
+      ctx.beginPath();
       arr.forEach((v,i)=>{
         const x = i * xstep;
-        const y = h - ((v - min) / (max - min || 1)) * (h-4*devicePixelRatio) - 2*devicePixelRatio;
+        const y = h - ((v - min) / (max - min || 1)) * (h-4) - 2;
         if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
       ctx.stroke();
     }
 
-    // Kp index (3‑hourly definitive/estimated)
+    // --- Kp ---
     async function loadKp(){
-      const url = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json';
-      const res = await fetch(url, {cache:'no-cache'});
+      const res = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {cache:'no-cache'});
       const data = await res.json();
       const rows = data.slice(1); // drop header
       const last = rows[rows.length-1];
       const when = last[0]; const kp = parseFloat(last[1]);
-      document.getElementById('kp').textContent = kp.toFixed(1);
+      document.getElementById('kp').textContent = isFinite(kp)? kp.toFixed(1) : '—';
       document.getElementById('kp-time').textContent = 'as of ' + fmtTime(when);
-      // daily max (UTC)
       const todayUTC = new Date().toISOString().slice(0,10);
       let dmax = -Infinity;
       for(const r of rows){
-        const day = String(r[0]).slice(0,10);
-        const v = parseFloat(r[1]);
-        if(day===todayUTC && isFinite(v)) dmax = Math.max(dmax, v);
-      }
-      const maxText = isFinite(dmax) ? `today max: ${dmax.toFixed(1)}` : 'today max: —';
-      document.getElementById('kp-dmax').textContent = maxText;
-      const badges = document.getElementById('kp-badges'); badges.innerHTML='';
-      if (kp < 4) badge(badges,'Quiet','ok');
-      else if (kp < 5) badge(badges,'Unsettled','warn');
-      else if (kp < 6) badge(badges,'G1 Minor storm','warn');
-      else if (kp < 7) badge(badges,'G2 Moderate','alert');
-      else if (kp < 8) badge(badges,'G3 Strong','alert');
-      else if (kp < 9) badge(badges,'G4 Severe','alert');
-      else badge(badges,'G5 Extreme','alert');
-    }
-
-    // GOES X‑ray (1‑day, 1‑min cadence)
-    function xrayClassFromFlux(flux){
-      const levels = [
-        {thr:1e-4, letter:'X'},
-        {thr:1e-5, letter:'M'},
-        {thr:1e-6, letter:'C'},
-        {thr:1e-7, letter:'B'},
-        {thr:1e-8, letter:'A'}
-      ];
-      for(const l of levels){ if(flux >= l.thr) return l.letter + (flux / l.thr).toFixed(2); }
-      return 'A0.00';
-    }
-
-    async function loadXray(){
-      const url = 'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json';
-      const res = await fetch(url, {cache:'no-cache'});
-      const data = await res.json();
-      const fluxes = data.map(d=>Number(d.xrsb)).filter(Number.isFinite);
-      const times = data.map(d=>d.time_tag);
-      const latest = fluxes[fluxes.length-1];
-      document.getElementById('xray-class').textContent = xrayClassFromFlux(latest);
-      document.getElementById('xray-time').textContent = 'last GOES sample ' + fmtTime(times[times.length-1]);
-      drawSpark(document.getElementById('xray-spark'), fluxes.slice(-180));
-      // daily max (UTC)
-      const todayUTC = new Date().toISOString().slice(0,10);
-      let maxFlux = 0;
-      for(let i=0;i<data.length;i++){
-        if(String(data[i].time_tag).slice(0,10)===todayUTC){
-          const f = Number(data[i].xrsb); if(isFinite(f)) maxFlux = Math.max(maxFlux, f);
+        if(String(r[0]).slice(0,10)===todayUTC){
+          const v = parseFloat(r[1]);
+          if(isFinite(v)) dmax = Math.max(dmax,v);
         }
       }
-      document.getElementById('xray-dmax').textContent = 'today max: ' + (maxFlux? xrayClassFromFlux(maxFlux) : '—');
-      // update compact chip too
-      const tiny = document.getElementById('tiny-xray'); if(tiny) tiny.textContent = xrayClassFromFlux(latest);
+      document.getElementById('kp-dmax').textContent = 'today max: ' + (isFinite(dmax)? dmax.toFixed(1) : '—');
+      const badges = document.getElementById('kp-badges'); if(badges){
+        badges.innerHTML='';
+        const mk = (txt,cls)=>{const s=document.createElement('span'); s.className='chip '+cls; s.textContent=txt; badges.appendChild(s);};
+        if (kp < 4) mk('Quiet','ok');
+        else if (kp < 5) mk('Unsettled','warn');
+        else if (kp < 6) mk('G1 Minor','warn');
+        else if (kp < 7) mk('G2 Moderate','alert');
+        else if (kp < 8) mk('G3 Strong','alert');
+        else if (kp < 9) mk('G4 Severe','alert');
+        else mk('G5 Extreme','alert');
+      }
     }
 
+    // --- GOES X-ray ---
+    function xrayClassFromFlux(flux){
+      const L = [[1e-4,'X'],[1e-5,'M'],[1e-6,'C'],[1e-7,'B'],[1e-8,'A']];
+      for(const [thr,letter] of L){ if(flux >= thr) return letter + (flux/thr).toFixed(2); }
+      return 'A0.00';
+    }
     async function loadXray(){
-      const url = 'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json';
-      const res = await fetch(url, {cache:'no-cache'});
+      const res = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {cache:'no-cache'});
       const data = await res.json();
       const fluxes = data.map(d=>Number(d.xrsb)).filter(Number.isFinite);
       const times = data.map(d=>d.time_tag);
       const latest = fluxes[fluxes.length-1];
       document.getElementById('xray-class').textContent = xrayClassFromFlux(latest);
       document.getElementById('xray-time').textContent = 'last GOES sample ' + fmtTime(times[times.length-1]);
+      const todayUTC = new Date().toISOString().slice(0,10);
+      let maxFlux = 0; for(const d of data){ if(String(d.time_tag).slice(0,10)===todayUTC){ const f=Number(d.xrsb); if(isFinite(f)) maxFlux=Math.max(maxFlux,f); }}
+      document.getElementById('xray-dmax').textContent = 'today max: ' + (maxFlux? xrayClassFromFlux(maxFlux) : '—');
+      const tiny = document.getElementById('tiny-xray'); if(tiny) tiny.textContent = xrayClassFromFlux(latest);
       drawSpark(document.getElementById('xray-spark'), fluxes.slice(-180));
     }
 
-    // Solar wind (ACE 1‑minute) via SWPC products
+    // --- Solar wind (ACE 1-min SWE & MAG) ---
     async function loadSolarWind(){
-      const plasmaUrl = 'https://services.swpc.noaa.gov/products/solar-wind/ace-swepam-1-minute.json';
-      const magUrl = 'https://services.swpc.noaa.gov/products/solar-wind/ace-magnetometer-1-minute.json';
       const [pRes, mRes] = await Promise.all([
-        fetch(plasmaUrl, {cache:'no-cache'}), fetch(magUrl, {cache:'no-cache'})
+        fetch('https://services.swpc.noaa.gov/products/solar-wind/ace-swepam-1-minute.json', {cache:'no-cache'}),
+        fetch('https://services.swpc.noaa.gov/products/solar-wind/ace-magnetometer-1-minute.json', {cache:'no-cache'})
       ]);
       const plasma = await pRes.json();
       const mag = await mRes.json();
-
-      const pHeader = plasma[0].map(s=>String(s).toLowerCase());
-      const mHeader = mag[0].map(s=>String(s).toLowerCase());
-      const idx = (arr,name)=>arr.indexOf(name);
+      const pH = plasma[0].map(s=>String(s).toLowerCase());
+      const mH = mag[0].map(s=>String(s).toLowerCase());
+      const i = (arr,k,def)=> (arr.indexOf(k)>=0? arr.indexOf(k): def);
       const iTimeP = 0, iTimeM = 0;
-      const iSpeed = idx(pHeader,'speed')>-1? idx(pHeader,'speed'): 3;
-      const iDensity = idx(pHeader,'density')>-1? idx(pHeader,'density'): 1;
-      const iBt = (idx(mHeader,'bt')>-1? idx(mHeader,'bt'): mHeader.length-1);
-      const iBz = (idx(mHeader,'bz_gsm')>-1? idx(mHeader,'bz_gsm'): (idx(mHeader,'bz')>-1? idx(mHeader,'bz'): mHeader.length-2));
-
-      const rowsP = plasma.slice(1);
-      const rowsM = mag.slice(1);
-      const lastP = rowsP[rowsP.length-1];
-      const lastM = rowsM[rowsM.length-1];
-
+      const iSpeed   = i(pH,'speed', 3);
+      const iDensity = i(pH,'density', 1);
+      const iBt      = i(mH,'bt', mH.length-1);
+      const iBz      = (mH.indexOf('bz_gsm')>=0? mH.indexOf('bz_gsm') : i(mH,'bz', mH.length-2));
+      const rowsP = plasma.slice(1), rowsM = mag.slice(1);
+      const lastP = rowsP[rowsP.length-1], lastM = rowsM[rowsM.length-1];
       const speed = parseFloat(lastP[iSpeed]);
       const density = parseFloat(lastP[iDensity]);
       const bt = parseFloat(lastM[iBt]);
       const bz = parseFloat(lastM[iBz]);
-
       document.getElementById('sw-speed').textContent = isFinite(speed)? speed.toFixed(0): '—';
       document.getElementById('sw-density').textContent = isFinite(density)? density.toFixed(1): '—';
       document.getElementById('sw-bt').textContent = isFinite(bt)? bt.toFixed(1): '—';
-      const bzEl = document.getElementById('sw-bz');
-      if (isFinite(bz)){
+      const bzEl = document.getElementById('sw-bz'); if (isFinite(bz)){
         bzEl.textContent = bz.toFixed(1);
         bzEl.style.color = (bz < -3) ? 'var(--alert)' : (bz < 0 ? 'var(--warn)' : 'var(--ok)');
       } else { bzEl.textContent = '—'; }
-
-      // compact chips
+      // tiny chips
       const tiny = (id,val,fmt=x=>x)=>{ const el=document.getElementById(id); if(el && isFinite(val)) el.textContent = fmt(val); };
       tiny('tiny-speed', speed, v=>v.toFixed(0));
       tiny('tiny-density', density, v=>v.toFixed(1));
       tiny('tiny-bt', bt, v=>v.toFixed(1));
       tiny('tiny-bz', bz, v=>v.toFixed(1));
-
-      // daily max (UTC) for speed, density, Bz, B
+      // daily max (UTC)
       const todayUTC = new Date().toISOString().slice(0,10);
       let maxSpeed=-Infinity, maxDensity=-Infinity, maxBt=-Infinity, maxBz=-Infinity;
       for(const r of rowsP){ if(String(r[iTimeP]).slice(0,10)===todayUTC){ const vS=parseFloat(r[iSpeed]); const vN=parseFloat(r[iDensity]); if(isFinite(vS)) maxSpeed=Math.max(maxSpeed,vS); if(isFinite(vN)) maxDensity=Math.max(maxDensity,vN); } }
@@ -373,60 +230,45 @@
       document.getElementById('sw-density-max').textContent = 'today max: ' + fmt(maxDensity,1);
       document.getElementById('sw-bt-max').textContent = 'today max: ' + fmt(maxBt,1);
       document.getElementById('sw-bz-max').textContent = 'today max: ' + fmt(maxBz,1);
-
-      // Speed spark line (last 2h)
+      // spark
       const speeds = rowsP.slice(-120).map(r=>parseFloat(r[iSpeed])).filter(v=>isFinite(v));
       drawSpark(document.getElementById('speed-spark'), speeds);
     }
 
-    // Alerts feed (R,S,G scales etc.)
+    // --- Alerts ---
     async function loadAlerts(){
-      const url = 'https://services.swpc.noaa.gov/products/alerts.json';
-      const res = await fetch(url, {cache:'no-cache'});
+      const res = await fetch('https://services.swpc.noaa.gov/products/alerts.json', {cache:'no-cache'});
       const data = await res.json();
-      const root = document.getElementById('alerts');
-      root.innerHTML = '';
-      if(!Array.isArray(data) || data.length === 0){ root.textContent = 'No current alerts.'; return; }
+      const root = document.getElementById('alerts'); root.innerHTML='';
+      if(!Array.isArray(data) || !data.length){ root.textContent='No current alerts.'; return; }
       data.slice(-10).reverse().forEach(a=>{
         const div = document.createElement('div');
         div.style.marginBottom = '10px';
         const when = fmtTime(a.issue_datetime || a.message_issue_datetime || a.event_begin);
         const cat = a.product_id || a.message_type || 'Alert';
-        const txt = a.message || a.summary || a.description || JSON.stringify(a);
-        div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${txt.replace(/
+        const txt = a.message || a.summary || a.description || '';
+        div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${String(txt).replace(/
 /g,'<br/>')}`;
         root.appendChild(div);
       });
     }
 
-    // Helper to try multiple image URLs (SuperMAG / Kyoto sometimes change)
+    // --- SYM-H image (Kyoto) and aurora cache-bust ---
     function tryImages(imgEl, urls){
-      let i = 0;
-      function setNext(){
-        if(i >= urls.length) return; // give up
-        const t = Date.now();
-        imgEl.src = urls[i] + (urls[i].includes('?') ? '&' : '?') + '_=' + t;
-      }
-      imgEl.onerror = ()=>{ i++; setNext(); };
-      setNext();
+      let i = 0; imgEl.onerror = ()=>{ if(++i<urls.length) imgEl.src = urls[i] + '?_=' + Date.now(); };
+      imgEl.src = urls[0] + '?_=' + Date.now();
     }
-
-    function refreshAEAL(){
-      const aeEl = document.getElementById('aeal-img');
-      tryImages(aeEl, [
-        // Candidate SuperMAG public plot URLs (24h AE/AL). Falls back if blocked.
-        'https://supermag.jhuapl.edu/mag/lib/img/plot_ae_24h.png',
-        'https://supermag.jhuapl.edu/mag/lib/img/plot_ae.png'
-      ]);
-    }
-
     function refreshSYM(){
       const sEl = document.getElementById('symh-img');
-      tryImages(sEl, [
-        // Candidate Kyoto WDC SYM-H quicklook images
+      tryImages(sEl,[
         'https://wdc.kugi.kyoto-u.ac.jp/aeasy/real_time_symh.png',
         'https://wdc.kugi.kyoto-u.ac.jp/aeasy/rt_symh.png'
       ]);
+    }
+    function refreshAurora(){
+      const img = document.getElementById('aurora-nh');
+      const base = img.src.split('?')[0];
+      img.src = base + '?_=' + Date.now();
     }
 
     async function refresh(){
@@ -435,23 +277,13 @@
       finally{ setUpdated(); }
     }
 
-    function refreshAuroraImages(){
-      const t = Date.now();
-      for (const id of ['aurora-nh','aurora-sh']){
-        const img = document.getElementById(id);
-        const base = img.src.split('?')[0];
-        img.src = base + '?_=' + t;
-      }
-    }
-
+    // initial + timers
     refresh();
-    refreshAEAL();
     refreshSYM();
-    refreshAuroraImages();
+    refreshAurora();
     setInterval(refresh, 60*1000);
-    setInterval(refreshAEAL, 5*60*1000);
     setInterval(refreshSYM, 5*60*1000);
-    setInterval(refreshAuroraImages, 60*1000);
+    setInterval(refreshAurora, 60*1000);
   </script>
 </body>
 </html>
