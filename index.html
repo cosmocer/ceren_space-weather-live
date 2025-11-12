@@ -6,36 +6,35 @@
   <title>Live Space Weather Dashboard</title>
   <style>
     :root{
-      --bg:#0b1220; --card:#121a2b; --muted:#8aa0c2; --text:#e7eefc; --accent:#5ec7ff; --warn:#ffd166; --alert:#ff6b6b; --ok:#7bd88f;
+      /* Light theme */
+      --bg:#f7f9fc; --card:#ffffff; --muted:#5a6b85; --text:#0b1b34; --accent:#0c6bff; --warn:#b15a00; --alert:#b00020; --ok:#1a7f37; --border:#e4e9f2;
     }
     *{box-sizing:border-box}
-    body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg,#0b1220,#0a1326); color:var(--text)}
-    header{padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #1e2a45}
+    body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial; background:var(--bg); color:var(--text)}
+    header{padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border); background:#f1f5fb}
     header h1{font-size:18px; margin:0; letter-spacing:.3px}
     header .updated{font-size:12px; color:var(--muted)}
     .container{max-width:1200px; margin:0 auto; padding:18px}
     .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
-    .card{background:var(--card); border:1px solid #1e2a45; border-radius:14px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,.25)}
-    .card h2{margin:0 0 8px; font-size:14px; color:#cfe1ff; font-weight:600}
-    .value{font-size:28px; font-weight:700}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow:0 6px 20px rgba(10,20,40,.05)}
+    .card h2{margin:0 0 8px; font-size:14px; color:#2b4a83; font-weight:700}
+    .value{font-size:28px; font-weight:800}
     .sub{font-size:12px; color:var(--muted)}
     .row{display:flex; gap:12px; flex-wrap:wrap; align-items:baseline}
-    .chip{font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #28466e; color:#cfe1ff}
-    .ok{color:var(--ok); border-color:rgba(123,216,143,.35)}
-    .warn{color:var(--warn); border-color:rgba(255,209,102,.35)}
-    .alert{color:var(--alert); border-color:rgba(255,107,107,.35)}
+    .chip{font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #c8d4ea; color:#2b4a83; background:#eef3ff}
+    .ok{color:var(--ok); border-color:rgba(26,127,55,.2); background:#ecf8f0}
+    .warn{color:var(--warn); border-color:rgba(177,90,0,.2); background:#fff1e0}
+    .alert{color:var(--alert); border-color:rgba(176,0,32,.2); background:#ffe9ee}
     .col-3{grid-column:span 3}
     .col-4{grid-column:span 4}
     .col-6{grid-column:span 6}
     .col-8{grid-column:span 8}
     .col-12{grid-column:span 12}
 
-    /* Simple sparkline */
     canvas{width:100%; height:54px}
 
-    /* Aurora map */
     .aurora{display:grid; grid-template-columns:1fr; gap:8px}
-    .aurora img{width:100%; border-radius:12px; border:1px solid #1e2a45}
+    .aurora img{width:100%; border-radius:12px; border:1px solid var(--border)}
 
     @media (max-width: 860px){
       .col-3,.col-4,.col-6,.col-8{grid-column:span 12}
@@ -43,6 +42,7 @@
     }
     a{color:var(--accent); text-decoration:none}
     a:hover{text-decoration:underline}
+    .imgcard img{width:100%; border:1px solid var(--border); border-radius:12px}
   </style>
 </head>
 <body>
@@ -57,6 +57,7 @@
         <h2>Planetary Kp</h2>
         <div class="value" id="kp">—</div>
         <div class="sub" id="kp-time">—</div>
+        <div class="sub" id="kp-dmax">—</div>
         <div class="row" id="kp-badges"></div>
       </section>
 
@@ -65,18 +66,92 @@
         <h2>GOES X‑ray Flux</h2>
         <div class="value" id="xray-class">—</div>
         <div class="sub" id="xray-time">—</div>
+        <div class="sub" id="xray-dmax">—</div>
         <canvas id="xray-spark"></canvas>
         <div class="sub">Class scale: A < B < C < M < X</div>
       </section>
 
-      <!-- Solar wind -->
+      <!-- Solar wind (ACE) -->
       <section class="card col-6">
-        <h2>Solar Wind (DSCOVR)</h2>
+        <h2>Solar Wind (ACE)</h2>
         <div class="row">
           <div>
             <div class="sub">Speed (km/s)</div>
             <div class="value" id="sw-speed">—</div>
+            <div class="sub" id="sw-speed-max">—</div>
           </div>
+          <div>
+            <div class="sub">Density (cm⁻³)</div>
+            <div class="value" id="sw-density">—</div>
+            <div class="sub" id="sw-density-max">—</div>
+          </div>
+          <div>
+            <div class="sub">B<sub>z</sub> (nT)</div>
+            <div class="value" id="sw-bz">—</div>
+            <div class="sub" id="sw-bz-max">—</div>
+          </div>
+          <div>
+            <div class="sub">B (nT)</div>
+            <div class="value" id="sw-bt">—</div>
+            <div class="sub" id="sw-bt-max">—</div>
+          </div>
+        </div>
+        <canvas id="speed-spark"></canvas>
+        <div class="sub">ACE SWE, MAG 1‑minute feeds via NOAA SWPC.</div>
+      </section>
+
+      <!-- Compact live metrics above OVATION -->
+      <section class="card col-12" id="compact-metrics">
+        <h2>Live Metrics</h2>
+        <div class="row">
+          <div class="chip">Vsw <span id="tiny-speed">—</span> km/s</div>
+          <div class="chip">Np <span id="tiny-density">—</span> cm⁻³</div>
+          <div class="chip">B <span id="tiny-bt">—</span> nT</div>
+          <div class="chip">Bz <span id="tiny-bz">—</span> nT</div>
+          <div class="chip">X‑ray <span id="tiny-xray">—</span></div>
+        </div>
+      </section>
+
+      <!-- Aurora -->
+      <section class="card col-8">
+        <h2>OVATION Aurora (Nowcast)</h2>
+        <div class="aurora">
+          <img id="aurora-nh" alt="Aurora forecast, Northern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg" />
+          <img id="aurora-sh" alt="Aurora forecast, Southern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg" />
+        </div>
+        <div class="sub">Images courtesy of NOAA SWPC. Green, yellow, red correspond to higher auroral probability.
+        </div>
+      </section>
+
+      <!-- AE/AL (SuperMAG image) -->
+      <section class="card col-4 imgcard">
+        <h2>AE / AL (SuperMAG)</h2>
+        <img id="aeal-img" alt="AE/AL recent plot" src=""/>
+        <div class="sub">If the image does not load, open <a href="https://supermag.jhuapl.edu/mag/" target="_blank" rel="noopener">SuperMAG MAG</a>.
+        </div>
+      </section>
+
+      <!-- SYM-H -->
+      <section class="card col-4 imgcard">
+        <h2>SYM‑H (Kyoto WDC)</h2>
+        <img id="symh-img" alt="SYM-H recent plot" src=""/>
+        <div class="sub">If the image does not load, open <a href="https://wdc.kugi.kyoto-u.ac.jp/aeasy/index.html" target="_blank" rel="noopener">Kyoto WDC</a>.
+        </div>
+      </section>
+
+      <!-- Alerts feed -->
+      <section class="card col-4">
+        <h2>NOAA Watches/Warnings/Alerts</h2>
+        <div id="alerts">Loading…</div>
+        <div class="sub">Source: <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">NOAA SWPC</a></div>
+      </section>
+
+      <!-- Footer -->
+      <section class="card col-12">
+        <div class="sub">Auto‑refreshes every 60 seconds. Data from <a href="https://services.swpc.noaa.gov/" target="_blank" rel="noopener">services.swpc.noaa.gov</a>, SuperMAG, and Kyoto WDC. All times show your local timezone.</div>
+      </section>
+    </div>
+  </div>
           <div>
             <div class="sub">Density (cm⁻³)</div>
             <div class="value" id="sw-density">—</div>
@@ -91,6 +166,7 @@
           </div>
         </div>
         <canvas id="speed-spark"></canvas>
+        <div class="sub">ACE SWE, MAG 1‑minute feeds via NOAA SWPC.</div>
       </section>
 
       <!-- Aurora -->
@@ -104,6 +180,22 @@
         </div>
       </section>
 
+      <!-- AE/AL (SuperMAG image) -->
+      <section class="card col-4 imgcard">
+        <h2>AE / AL (SuperMAG)</h2>
+        <img id="aeal-img" alt="AE/AL recent plot" src=""/>
+        <div class="sub">If the image does not load, open <a href="https://supermag.jhuapl.edu/mag/" target="_blank" rel="noopener">SuperMAG MAG</a>.
+        </div>
+      </section>
+
+      <!-- SYM-H -->
+      <section class="card col-4 imgcard">
+        <h2>SYM‑H (Kyoto WDC)</h2>
+        <img id="symh-img" alt="SYM-H recent plot" src=""/>
+        <div class="sub">If the image does not load, open <a href="https://wdc.kugi.kyoto-u.ac.jp/aeasy/index.html" target="_blank" rel="noopener">Kyoto WDC</a>.
+        </div>
+      </section>
+
       <!-- Alerts feed -->
       <section class="card col-4">
         <h2>NOAA Watches/Warnings/Alerts</h2>
@@ -113,8 +205,7 @@
 
       <!-- Footer -->
       <section class="card col-12">
-        <div class="sub">Auto‑refreshes every 60 seconds. Data from <a href="https://services.swpc.noaa.gov/" target="_blank" rel="noopener">services.swpc.noaa.gov</a>.
-          All times show your local timezone.</div>
+        <div class="sub">Auto‑refreshes every 60 seconds. Data from <a href="https://services.swpc.noaa.gov/" target="_blank" rel="noopener">services.swpc.noaa.gov</a>, SuperMAG, and Kyoto WDC. All times show your local timezone.</div>
       </section>
     </div>
   </div>
@@ -154,11 +245,21 @@
       const url = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json';
       const res = await fetch(url, {cache:'no-cache'});
       const data = await res.json();
-      // First row is header. Use last non-header row.
-      const row = data[data.length-1];
-      const when = row[0]; const kp = parseFloat(row[1]);
+      const rows = data.slice(1); // drop header
+      const last = rows[rows.length-1];
+      const when = last[0]; const kp = parseFloat(last[1]);
       document.getElementById('kp').textContent = kp.toFixed(1);
       document.getElementById('kp-time').textContent = 'as of ' + fmtTime(when);
+      // daily max (UTC)
+      const todayUTC = new Date().toISOString().slice(0,10);
+      let dmax = -Infinity;
+      for(const r of rows){
+        const day = String(r[0]).slice(0,10);
+        const v = parseFloat(r[1]);
+        if(day===todayUTC && isFinite(v)) dmax = Math.max(dmax, v);
+      }
+      const maxText = isFinite(dmax) ? `today max: ${dmax.toFixed(1)}` : 'today max: —';
+      document.getElementById('kp-dmax').textContent = maxText;
       const badges = document.getElementById('kp-badges'); badges.innerHTML='';
       if (kp < 4) badge(badges,'Quiet','ok');
       else if (kp < 5) badge(badges,'Unsettled','warn');
@@ -169,7 +270,7 @@
       else badge(badges,'G5 Extreme','alert');
     }
 
-    // GOES X‑ray (primary satellite, 1‑day, 1‑min cadence)
+    // GOES X‑ray (1‑day, 1‑min cadence)
     function xrayClassFromFlux(flux){
       const levels = [
         {thr:1e-4, letter:'X'},
@@ -186,7 +287,29 @@
       const url = 'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json';
       const res = await fetch(url, {cache:'no-cache'});
       const data = await res.json();
-      // Data objects: {time_tag, xrsa, xrsb}. Use long channel (xrsb, 1–8 Å)
+      const fluxes = data.map(d=>Number(d.xrsb)).filter(Number.isFinite);
+      const times = data.map(d=>d.time_tag);
+      const latest = fluxes[fluxes.length-1];
+      document.getElementById('xray-class').textContent = xrayClassFromFlux(latest);
+      document.getElementById('xray-time').textContent = 'last GOES sample ' + fmtTime(times[times.length-1]);
+      drawSpark(document.getElementById('xray-spark'), fluxes.slice(-180));
+      // daily max (UTC)
+      const todayUTC = new Date().toISOString().slice(0,10);
+      let maxFlux = 0;
+      for(let i=0;i<data.length;i++){
+        if(String(data[i].time_tag).slice(0,10)===todayUTC){
+          const f = Number(data[i].xrsb); if(isFinite(f)) maxFlux = Math.max(maxFlux, f);
+        }
+      }
+      document.getElementById('xray-dmax').textContent = 'today max: ' + (maxFlux? xrayClassFromFlux(maxFlux) : '—');
+      // update compact chip too
+      const tiny = document.getElementById('tiny-xray'); if(tiny) tiny.textContent = xrayClassFromFlux(latest);
+    }
+
+    async function loadXray(){
+      const url = 'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json';
+      const res = await fetch(url, {cache:'no-cache'});
+      const data = await res.json();
       const fluxes = data.map(d=>Number(d.xrsb)).filter(Number.isFinite);
       const times = data.map(d=>d.time_tag);
       const latest = fluxes[fluxes.length-1];
@@ -195,21 +318,35 @@
       drawSpark(document.getElementById('xray-spark'), fluxes.slice(-180));
     }
 
-    // Solar wind (DSCOVR, 15‑min plasma & mag if available). Use 1‑hour for robustness.
+    // Solar wind (ACE 1‑minute) via SWPC products
     async function loadSolarWind(){
-      const plasmaUrl = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-hour.json';
-      const magUrl = 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-hour.json';
+      const plasmaUrl = 'https://services.swpc.noaa.gov/products/solar-wind/ace-swepam-1-minute.json';
+      const magUrl = 'https://services.swpc.noaa.gov/products/solar-wind/ace-magnetometer-1-minute.json';
       const [pRes, mRes] = await Promise.all([
         fetch(plasmaUrl, {cache:'no-cache'}), fetch(magUrl, {cache:'no-cache'})
       ]);
       const plasma = await pRes.json();
       const mag = await mRes.json();
-      const pRow = plasma[plasma.length-1];
-      const mRow = mag[mag.length-1];
-      const speed = parseFloat(pRow[2]); // km/s
-      const density = parseFloat(pRow[1]); // n/cc
-      const bt = parseFloat(mRow[6]); // total field nT
-      const bz = parseFloat(mRow[7]); // GSM Bz nT
+
+      const pHeader = plasma[0].map(s=>String(s).toLowerCase());
+      const mHeader = mag[0].map(s=>String(s).toLowerCase());
+      const idx = (arr,name)=>arr.indexOf(name);
+      const iTimeP = 0, iTimeM = 0;
+      const iSpeed = idx(pHeader,'speed')>-1? idx(pHeader,'speed'): 3;
+      const iDensity = idx(pHeader,'density')>-1? idx(pHeader,'density'): 1;
+      const iBt = (idx(mHeader,'bt')>-1? idx(mHeader,'bt'): mHeader.length-1);
+      const iBz = (idx(mHeader,'bz_gsm')>-1? idx(mHeader,'bz_gsm'): (idx(mHeader,'bz')>-1? idx(mHeader,'bz'): mHeader.length-2));
+
+      const rowsP = plasma.slice(1);
+      const rowsM = mag.slice(1);
+      const lastP = rowsP[rowsP.length-1];
+      const lastM = rowsM[rowsM.length-1];
+
+      const speed = parseFloat(lastP[iSpeed]);
+      const density = parseFloat(lastP[iDensity]);
+      const bt = parseFloat(lastM[iBt]);
+      const bz = parseFloat(lastM[iBz]);
+
       document.getElementById('sw-speed').textContent = isFinite(speed)? speed.toFixed(0): '—';
       document.getElementById('sw-density').textContent = isFinite(density)? density.toFixed(1): '—';
       document.getElementById('sw-bt').textContent = isFinite(bt)? bt.toFixed(1): '—';
@@ -218,8 +355,27 @@
         bzEl.textContent = bz.toFixed(1);
         bzEl.style.color = (bz < -3) ? 'var(--alert)' : (bz < 0 ? 'var(--warn)' : 'var(--ok)');
       } else { bzEl.textContent = '—'; }
-      // Speed spark line
-      const speeds = plasma.slice(-120).map(r=>parseFloat(r[2])).filter(v=>isFinite(v));
+
+      // compact chips
+      const tiny = (id,val,fmt=x=>x)=>{ const el=document.getElementById(id); if(el && isFinite(val)) el.textContent = fmt(val); };
+      tiny('tiny-speed', speed, v=>v.toFixed(0));
+      tiny('tiny-density', density, v=>v.toFixed(1));
+      tiny('tiny-bt', bt, v=>v.toFixed(1));
+      tiny('tiny-bz', bz, v=>v.toFixed(1));
+
+      // daily max (UTC) for speed, density, Bz, B
+      const todayUTC = new Date().toISOString().slice(0,10);
+      let maxSpeed=-Infinity, maxDensity=-Infinity, maxBt=-Infinity, maxBz=-Infinity;
+      for(const r of rowsP){ if(String(r[iTimeP]).slice(0,10)===todayUTC){ const vS=parseFloat(r[iSpeed]); const vN=parseFloat(r[iDensity]); if(isFinite(vS)) maxSpeed=Math.max(maxSpeed,vS); if(isFinite(vN)) maxDensity=Math.max(maxDensity,vN); } }
+      for(const r of rowsM){ if(String(r[iTimeM]).slice(0,10)===todayUTC){ const vBt=parseFloat(r[iBt]); const vBz=parseFloat(r[iBz]); if(isFinite(vBt)) maxBt=Math.max(maxBt,vBt); if(isFinite(vBz)) maxBz=Math.max(maxBz,vBz); } }
+      const fmt = (v,dec=0)=> isFinite(v)? v.toFixed(dec): '—';
+      document.getElementById('sw-speed-max').textContent = 'today max: ' + fmt(maxSpeed,0);
+      document.getElementById('sw-density-max').textContent = 'today max: ' + fmt(maxDensity,1);
+      document.getElementById('sw-bt-max').textContent = 'today max: ' + fmt(maxBt,1);
+      document.getElementById('sw-bz-max').textContent = 'today max: ' + fmt(maxBz,1);
+
+      // Speed spark line (last 2h)
+      const speeds = rowsP.slice(-120).map(r=>parseFloat(r[iSpeed])).filter(v=>isFinite(v));
       drawSpark(document.getElementById('speed-spark'), speeds);
     }
 
@@ -237,9 +393,40 @@
         const when = fmtTime(a.issue_datetime || a.message_issue_datetime || a.event_begin);
         const cat = a.product_id || a.message_type || 'Alert';
         const txt = a.message || a.summary || a.description || JSON.stringify(a);
-        div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${txt.replace(/\n/g,'<br/>')}`;
+        div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${txt.replace(/
+/g,'<br/>')}`;
         root.appendChild(div);
       });
+    }
+
+    // Helper to try multiple image URLs (SuperMAG / Kyoto sometimes change)
+    function tryImages(imgEl, urls){
+      let i = 0;
+      function setNext(){
+        if(i >= urls.length) return; // give up
+        const t = Date.now();
+        imgEl.src = urls[i] + (urls[i].includes('?') ? '&' : '?') + '_=' + t;
+      }
+      imgEl.onerror = ()=>{ i++; setNext(); };
+      setNext();
+    }
+
+    function refreshAEAL(){
+      const aeEl = document.getElementById('aeal-img');
+      tryImages(aeEl, [
+        // Candidate SuperMAG public plot URLs (24h AE/AL). Falls back if blocked.
+        'https://supermag.jhuapl.edu/mag/lib/img/plot_ae_24h.png',
+        'https://supermag.jhuapl.edu/mag/lib/img/plot_ae.png'
+      ]);
+    }
+
+    function refreshSYM(){
+      const sEl = document.getElementById('symh-img');
+      tryImages(sEl, [
+        // Candidate Kyoto WDC SYM-H quicklook images
+        'https://wdc.kugi.kyoto-u.ac.jp/aeasy/real_time_symh.png',
+        'https://wdc.kugi.kyoto-u.ac.jp/aeasy/rt_symh.png'
+      ]);
     }
 
     async function refresh(){
@@ -248,7 +435,6 @@
       finally{ setUpdated(); }
     }
 
-    // Bust image cache for aurora every minute by appending a noop query param
     function refreshAuroraImages(){
       const t = Date.now();
       for (const id of ['aurora-nh','aurora-sh']){
@@ -259,8 +445,12 @@
     }
 
     refresh();
+    refreshAEAL();
+    refreshSYM();
     refreshAuroraImages();
     setInterval(refresh, 60*1000);
+    setInterval(refreshAEAL, 5*60*1000);
+    setInterval(refreshSYM, 5*60*1000);
     setInterval(refreshAuroraImages, 60*1000);
   </script>
 </body>
