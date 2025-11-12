@@ -231,7 +231,7 @@
       const root = document.getElementById('alerts');
       root.innerHTML = '';
       if(!Array.isArray(data) || data.length === 0){ root.textContent = 'No current alerts.'; return; }
-      data.slice(-10).reverse().forEach(a=>{
+      data.slice(-3).forEach(a=>{
         const div = document.createElement('div');
         div.style.marginBottom = '10px';
         const when = fmtTime(a.issue_datetime || a.message_issue_datetime || a.event_begin);
