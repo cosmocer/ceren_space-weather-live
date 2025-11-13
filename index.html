@@ -28,6 +28,24 @@
     .col-8{grid-column:span 8}
     .col-12{grid-column:span 12}
 
+    /* metrics + status cards (from light dashboard, adapted to dark) */
+    .card-title{display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; font-weight:600; color:#cfe1ff}
+    .icon{font-size:16px}
+    .metric{display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #1e2a45}
+    .metric:last-child{border-bottom:none}
+    .metric-label{font-size:11px; color:var(--muted)}
+    .metric-value{font-size:14px; font-weight:600}
+    .status-indicator{display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px}
+    .status-green{background:#22c55e}
+    .status-yellow{background:#facc15}
+    .status-red{background:#f97316}
+    .positive{color:#22c55e}
+    .negative{color:#f97316}
+
+    .kp-index{display:flex; gap:5px; margin-top:8px}
+    .kp-bar{flex:1; height:18px; background:#0f172a; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#8aa0c2; border:1px solid #1e2a45}
+    .kp-bar.active{background:linear-gradient(135deg,#4caf50,#22c55e); color:#e7eefc; box-shadow:0 0 8px rgba(34,197,94,.4); border-color:transparent}
+
     canvas{width:100%; height:54px}
     #kp-chart{height:220px}
 
@@ -54,48 +72,103 @@
   </header>
   <div class="container">
     <div class="grid">
-      <!-- Row 1: Kp (left) and Alerts (right) top-aligned -->
-      <section class="card col-3">
-        <h2>Planetary Kp</h2>
-        <div class="value" id="kp">—</div>
-        <div class="sub" id="kp-time">—</div>
-        <div class="row" id="kp-badges"></div>
-      </section>
-
-      <section class="card col-3" style="align-self:start">
+      <!-- Row 1: NOAA Watches on the left, then activity cards -->
+      <section class="card col-4" style="align-self:start">
         <h2>NOAA Watches/Warnings/Alerts</h2>
         <div id="alerts">Loading…</div>
         <div class="sub">Latest warning only. Source: <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">SWPC</a></div>
       </section>
 
-      <!-- Keep other quick-look cards on this row -->
-      <section class="card col-3">
-        <h2>GOES X-ray Flux</h2>
-        <div class="value" id="xray-class">—</div>
-        <div class="sub" id="xray-time">—</div>
-        <canvas id="xray-spark"></canvas>
-        <div class="sub">Class scale: A < B < C < M < X</div>
-      </section>
-
-      <section class="card col-3">
-        <h2>Solar Wind</h2>
-        <div class="row">
-          <div><div class="sub">Speed (km/s)</div><div class="value" id="sw-speed">—</div></div>
-          <div><div class="sub">Density (cm⁻³)</div><div class="value" id="sw-density">—</div></div>
-          <div><div class="sub">B<sub>z</sub> (nT)</div><div class="value" id="sw-bz">—</div></div>
-          <div><div class="sub">B<sub>t</sub> (nT)</div><div class="value" id="sw-bt">—</div></div>
+      <section class="card col-4">
+        <div class="card-title"><span class="icon">☀️</span>Solar Flare Activity</div>
+        <div class="metric">
+          <span class="metric-label">Max class (last 24 h)</span>
+          <span class="metric-value" id="sf-class">—</span>
         </div>
-        <div class="sub">Live L1 measurements (no mini-plot).</div>
+        <div class="metric">
+          <span class="metric-label">Time of max</span>
+          <span class="metric-value" id="sf-time">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Status</span>
+          <span class="metric-value">
+            <span class="status-indicator" id="sf-status-dot"></span>
+            <span id="sf-status-text">—</span>
+          </span>
+        </div>
       </section>
 
-      <!-- Row 2: Kp chart above aurora -->
-      <section class="card col-8">
+      <section class="card col-4">
+        <div class="card-title"><span class="icon">🧲</span>Geomagnetic Field</div>
+        <div class="metric">
+          <span class="metric-label">Kp index</span>
+          <span class="metric-value" id="gm-kp">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Storm level</span>
+          <span class="metric-value" id="gm-level">—</span>
+        </div>
+        <div class="kp-index" id="gm-kp-bars"></div>
+      </section>
+
+      <!-- Row 2: IMF, Solar Wind, Solar Activity -->
+      <section class="card col-4">
+        <div class="card-title"><span class="icon">🧭</span>Magnetic Field (IMF)</div>
+        <div class="metric">
+          <span class="metric-label">Bt (nT)</span>
+          <span class="metric-value" id="imf-bt">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Bz (nT)</span>
+          <span class="metric-value" id="imf-bz">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Direction</span>
+          <span class="metric-value" id="imf-dir">—</span>
+        </div>
+        <div class="sub" id="imf-warning"></div>
+      </section>
+
+      <section class="card col-4">
+        <div class="card-title"><span class="icon">💨</span>Solar Wind</div>
+        <div class="metric">
+          <span class="metric-label">Speed (km/s)</span>
+          <span class="metric-value" id="sw-speed">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Density (cm⁻³)</span>
+          <span class="metric-value" id="sw-density">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Temperature (K)</span>
+          <span class="metric-value" id="sw-temp">—</span>
+        </div>
+      </section>
+
+      <section class="card col-4">
+        <div class="card-title"><span class="icon">☀️</span>Solar Activity</div>
+        <div class="metric">
+          <span class="metric-label">Sunspot number</span>
+          <span class="metric-value" id="sa-ssn">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">F10.7 flux (sfu)</span>
+          <span class="metric-value" id="sa-f107">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Cycle phase</span>
+          <span class="metric-value" id="sa-phase">—</span>
+        </div>
+      </section>
+
+      <!-- Row 3: Kp chart above aurora -->
+      <section class="card col-8" style="align-self:start">
         <h2>Kp Index, last ~4 days (3-hour bins)</h2>
         <canvas id="kp-chart"></canvas>
-        <div class="sub">Shaded bands: Kp < 4 in green, Kp 4→9 transitions from yellow to red. Y-axis fixed 0–9.</div>
+        <div class="sub">Shaded bands: Kp &lt; 4 in green, Kp 4→9 transitions from yellow to red. Y-axis fixed 0–9.</div>
       </section>
 
-      <section class="card col-8">
+      <section class="card col-4" style="align-self:start">
         <h2>OVATION Aurora (Nowcast)</h2>
         <div class="aurora">
           <img id="aurora-nh" alt="Aurora forecast, Northern Hemisphere" src="https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg" />
@@ -103,9 +176,9 @@
         <div class="sub">Images courtesy of NOAA SWPC. Green, yellow, red correspond to higher auroral probability.</div>
       </section>
 
-      <!-- Row 3: E-field map -->
+      <!-- Row 4: E-field map -->
       <section class="card col-12">
-        <h2>Geoelectric Field (US & Canada, regional 1-D)</h2>
+        <h2>Geoelectric Field (US &amp; Canada, regional 1-D)</h2>
         <div id="efield-map"><div id="efield-error" class="inline-error">E-field data unavailable. Retrying…</div></div>
         <div class="sub">Filled contours show |E| (mV/km) using an interpolated field; vectors show (Ex,Ey), scaled for visibility (not to geographic scale).</div>
       </section>
@@ -124,13 +197,8 @@
       document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
-    function badge(el, text, cls){
-      const s = document.createElement('span');
-      s.className = 'chip ' + (cls || '');
-      s.textContent = text; el.appendChild(s);
-    }
-
     function drawSpark(canvas, arr){
+      if (!canvas) return;
       const ctx = canvas.getContext('2d');
       const w = canvas.width = canvas.clientWidth * devicePixelRatio;
       const h = canvas.height = canvas.clientHeight * devicePixelRatio;
@@ -149,23 +217,42 @@
     }
 
     // ---------- Kp ----------
+    function renderKpBars(kp){
+      const container = document.getElementById('gm-kp-bars');
+      if (!container) return;
+      const rounded = Math.max(0, Math.min(9, Math.round(kp)));
+      let html = '';
+      for (let i=0;i<=9;i++){
+        const active = i < rounded ? 'kp-bar active' : 'kp-bar';
+        html += `<div class="${active}">${i}</div>`;
+      }
+      container.innerHTML = html;
+    }
+
     async function loadKp(){
       const url = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json';
       const res = await fetch(url, {cache:'no-cache'});
       if(!res.ok) throw new Error('Kp HTTP '+res.status);
       const data = await res.json();
       const row = data[data.length-1];
-      const when = row[0]; const kp = parseFloat(row[1]);
-      document.getElementById('kp').textContent = kp.toFixed(1);
-      document.getElementById('kp-time').textContent = 'as of ' + fmtTime(when);
-      const badges = document.getElementById('kp-badges'); badges.innerHTML='';
-      if (kp < 4) badge(badges,'Quiet','ok');
-      else if (kp < 5) badge(badges,'Unsettled','warn');
-      else if (kp < 6) badge(badges,'G1 Minor storm','warn');
-      else if (kp < 7) badge(badges,'G2 Moderate','alert');
-      else if (kp < 8) badge(badges,'G3 Strong','alert');
-      else if (kp < 9) badge(badges,'G4 Severe','alert');
-      else badge(badges,'G5 Extreme','alert');
+      const when = row[0];
+      const kp = parseFloat(row[1]);
+      const kpEl = document.getElementById('gm-kp');
+      if (kpEl && isFinite(kp)) kpEl.textContent = kp.toFixed(1);
+
+      // Storm level text similar to old badges
+      let level = 'Quiet';
+      if (kp < 4) level = 'Quiet';
+      else if (kp < 5) level = 'Unsettled';
+      else if (kp < 6) level = 'G1 Minor storm';
+      else if (kp < 7) level = 'G2 Moderate';
+      else if (kp < 8) level = 'G3 Strong';
+      else if (kp < 9) level = 'G4 Severe';
+      else level = 'G5 Extreme';
+      const gmLevelEl = document.getElementById('gm-level');
+      if (gmLevelEl) gmLevelEl.textContent = level + ' (as of ' + fmtTime(when) + ')';
+
+      renderKpBars(kp);
     }
 
     function drawKpChart(canvas, series){
@@ -223,37 +310,139 @@
       drawKpChart(document.getElementById('kp-chart'), series.slice(-32));
     }
 
-    // ---------- X-ray ----------
+    // ---------- X-ray / Solar flares ----------
     function xrayClassFromFlux(flux){
       const levels = [ {thr:1e-4, letter:'X'}, {thr:1e-5, letter:'M'}, {thr:1e-6, letter:'C'}, {thr:1e-7, letter:'B'}, {thr:1e-8, letter:'A'} ];
       for(const l of levels){ if(flux >= l.thr) return l.letter + (flux / l.thr).toFixed(2); }
       return 'A0.00';
     }
 
+    function updateSolarFlareStatus(cls){
+      const dot = document.getElementById('sf-status-dot');
+      const txt = document.getElementById('sf-status-text');
+      if (!dot || !txt) return;
+      const level = cls ? cls[0] : 'A';
+      dot.className = 'status-indicator';
+      let label = 'quiet';
+      if (level === 'M'){
+        dot.classList.add('status-yellow');
+        label = 'active (M-class)';
+      } else if (level === 'X'){
+        dot.classList.add('status-red');
+        label = 'intense (X-class)';
+      } else if (level === 'C'){
+        dot.classList.add('status-yellow');
+        label = 'elevated (C-class)';
+      } else {
+        dot.classList.add('status-green');
+        label = 'quiet/background';
+      }
+      txt.textContent = label;
+    }
+
     async function loadXray(){
       const url = 'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json';
-      const res = await fetch(url, {cache:'no-cache'});
-      if(!res.ok) throw new Error('Xray HTTP '+res.status);
-      const data = await res.json();
-      const points = data.filter(d=>Number.isFinite(Number(d.xrsb)));
-      // Find max over last 24h
-      let maxIdx = -1; let maxVal = -Infinity;
-      for (let i=0;i<points.length;i++){
-        const v = Number(points[i].xrsb);
-        if (v>maxVal){ maxVal=v; maxIdx=i; }
+      try{
+        const res = await fetch(url, {cache:'no-cache'});
+        if(!res.ok) throw new Error('Xray HTTP '+res.status);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || !data.length){
+          const classEl = document.getElementById('sf-class');
+          const timeEl = document.getElementById('sf-time');
+          if (classEl) classEl.textContent = '—';
+          if (timeEl) timeEl.textContent = 'no data';
+          updateSolarFlareStatus('A0.0');
+          return;
+        }
+
+        const preferredSat = 18;
+        const parseSat = s => Number(s);
+
+        // 1) Preferred: satellite 18, 0.1–0.8 nm band
+        let pts = data.filter(d =>
+          Number.isFinite(Number(d.flux)) &&
+          d.energy === '0.1-0.8nm' &&
+          parseSat(d.satellite) === preferredSat
+        );
+
+        // 2) Fallback: any satellite but correct band
+        if (!pts.length){
+          pts = data.filter(d =>
+            Number.isFinite(Number(d.flux)) &&
+            d.energy === '0.1-0.8nm'
+          );
+        }
+
+        // 3) Fallback: any record with a valid flux
+        if (!pts.length){
+          pts = data.filter(d => Number.isFinite(Number(d.flux)));
+        }
+
+        if (!pts.length){
+          const classEl = document.getElementById('sf-class');
+          const timeEl = document.getElementById('sf-time');
+          if (classEl) classEl.textContent = '—';
+          if (timeEl) timeEl.textContent = 'no data';
+          updateSolarFlareStatus('A0.0');
+          return;
+        }
+
+        // Find maximum flux among the chosen points
+        let maxIdx = 0;
+        let maxVal = Number(pts[0].flux);
+        for (let i = 1; i < pts.length; i++){
+          const v = Number(pts[i].flux);
+          if (v > maxVal){
+            maxVal = v;
+            maxIdx = i;
+          }
+        }
+
+        const cls = xrayClassFromFlux(maxVal);
+        const p = pts[maxIdx];
+        const classEl = document.getElementById('sf-class');
+        const timeEl = document.getElementById('sf-time');
+        if (classEl) classEl.textContent = cls;
+        if (timeEl) timeEl.textContent = fmtTime(p.time_tag);
+        updateSolarFlareStatus(cls);
+
+        // Optional spark support (if a small canvas is added later)
+        drawSpark(
+          document.getElementById('xray-spark'),
+          pts.map(pt => Number(pt.flux)).slice(-180)
+        );
+      }catch(e){
+        console.error('Xray load error', e);
+        const classEl = document.getElementById('sf-class');
+        const timeEl = document.getElementById('sf-time');
+        if (classEl) classEl.textContent = '—';
+        if (timeEl) timeEl.textContent = 'no data';
+        updateSolarFlareStatus('A0.0');
+      }
+    }
+
       }
       if (maxIdx>=0){
-        document.getElementById('xray-class').textContent = xrayClassFromFlux(maxVal);
-        document.getElementById('xray-time').textContent = 'max in last 24h at ' + fmtTime(points[maxIdx].time_tag);
+        const cls = xrayClassFromFlux(maxVal);
+        const p = points[maxIdx];
+        const classEl = document.getElementById('sf-class');
+        const timeEl = document.getElementById('sf-time');
+        if (classEl) classEl.textContent = cls;
+        if (timeEl) timeEl.textContent = fmtTime(p.time_tag);
+        updateSolarFlareStatus(cls);
       } else {
-        document.getElementById('xray-class').textContent = '—';
-        document.getElementById('xray-time').textContent = 'no data';
+        const classEl = document.getElementById('sf-class');
+        const timeEl = document.getElementById('sf-time');
+        if (classEl) classEl.textContent = '—';
+        if (timeEl) timeEl.textContent = 'no data';
+        updateSolarFlareStatus('A0.0');
       }
-      // Keep sparkline for context (optional visual)
+      // optional spark support (if a canvas ever added back)
       drawSpark(document.getElementById('xray-spark'), points.map(p=>Number(p.xrsb)).slice(-180));
     }
 
-    // ---------- Solar wind ----------
+    // ---------- Solar wind + IMF ----------
     async function loadSolarWind(){
       const plasmaUrl = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
       const magUrl = 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
@@ -269,19 +458,70 @@
       const mRow = mag[mag.length-1];
       const speed = parseFloat(pRow[2]);
       const density = parseFloat(pRow[1]);
+      const temp = parseFloat(pRow[3]);
       const bt = parseFloat(mRow[6]);
-      const bz = parseFloat(mRow[7]);
-      document.getElementById('sw-speed').textContent = isFinite(speed)? speed.toFixed(0): '—';
-      document.getElementById('sw-density').textContent = isFinite(density)? density.toFixed(1): '—';
-      document.getElementById('sw-bt').textContent = isFinite(bt)? bt.toFixed(1): '—';
-      const bzEl = document.getElementById('sw-bz');
-      if (isFinite(bz)){
-        bzEl.textContent = bz.toFixed(1);
-        bzEl.style.color = (bz < -3) ? 'var(--alert)' : (bz < 0 ? 'var(--warn)' : 'var(--ok)');
-      } else {
-        bzEl.textContent = '—';
+      const bz = parseFloat(mRow[3]);
+
+      const speedEl = document.getElementById('sw-speed');
+      if (speedEl) speedEl.textContent = isFinite(speed)? speed.toFixed(0): '—';
+      const densEl = document.getElementById('sw-density');
+      if (densEl) densEl.textContent = isFinite(density)? density.toFixed(1): '—';
+      const tempEl = document.getElementById('sw-temp');
+      if (tempEl) tempEl.textContent = isFinite(temp)? temp.toFixed(0): '—';
+
+      const btEl = document.getElementById('imf-bt');
+      if (btEl) btEl.textContent = isFinite(bt)? bt.toFixed(1): '—';
+      const bzEl = document.getElementById('imf-bz');
+      if (bzEl){
+        if (isFinite(bz)){
+          bzEl.textContent = bz.toFixed(1);
+          bzEl.classList.remove('positive','negative');
+          bzEl.classList.add(bz < 0 ? 'negative' : 'positive');
+        } else {
+          bzEl.textContent = '—';
+          bzEl.classList.remove('positive','negative');
+        }
       }
-      // no sparkline requested in Solar Wind card
+      const dirEl = document.getElementById('imf-dir');
+      if (dirEl){
+        if (isFinite(bz)) dirEl.textContent = bz < 0 ? 'southward' : 'northward';
+        else dirEl.textContent = '—';
+      }
+      const warnEl = document.getElementById('imf-warning');
+      if (warnEl){
+        if (isFinite(bz) && bz < -5){
+          warnEl.textContent = '⚠ Strong southward Bz may trigger geomagnetic activity';
+          warnEl.style.color = 'var(--alert)';
+        } else {
+          warnEl.textContent = '';
+          warnEl.style.color = 'var(--muted)';
+        }
+      }
+    }
+
+    // ---------- Solar activity (sunspots / F10.7) ----------
+    async function loadSolarCycle(){
+      const url = 'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json';
+      const res = await fetch(url, {cache:'no-cache'});
+      if (!res.ok) throw new Error('Solar cycle HTTP '+res.status);
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) return;
+      const last = data[data.length-1];
+      const ssn = Number(last.ssn ?? last.observed_swpc_ssn);
+      const f107 = Number(last['f10.7'] ?? last.f10_7 ?? last.f107);
+      const ssnEl = document.getElementById('sa-ssn');
+      const fEl = document.getElementById('sa-f107');
+      const phaseEl = document.getElementById('sa-phase');
+      if (ssnEl) ssnEl.textContent = isFinite(ssn)? ssn.toFixed(0) : '—';
+      if (fEl) fEl.textContent = isFinite(f107)? f107.toFixed(1) : '—';
+      if (phaseEl){
+        let phase = 'quiet/declining phase';
+        if (isFinite(ssn)){
+          if (ssn > 80) phase = 'solar maximum phase';
+          else if (ssn > 20) phase = 'rising phase';
+        }
+        phaseEl.textContent = phase;
+      }
     }
 
     // ---------- Alerts (latest WARNING only) ----------
@@ -295,21 +535,36 @@
     }
     async function loadAlerts(){
       const url = 'https://services.swpc.noaa.gov/products/alerts.json';
-      const res = await fetch(url, {cache:'no-cache'});
-      if(!res.ok) throw new Error('Alerts HTTP '+res.status);
-      const data = await res.json();
       const root = document.getElementById('alerts');
-      root.innerHTML = '';
-      const rows = Array.isArray(data) ? data.slice(1) : [];
-      if(rows.length === 0){ root.textContent = 'No current alerts.'; return; }
-      const latestWarning = rows.filter(isWarning).sort((a,b)=>parseAlertTime(a)-parseAlertTime(b)).pop();
-      const item = latestWarning || rows.sort((a,b)=>parseAlertTime(a)-parseAlertTime(b)).pop();
-      const when = fmtTime(item.issue_datetime || item.message_issue_datetime || item.event_begin);
-      const cat = item.product_id || item.message_type || 'Alert';
-      const txt = (item.message || item.summary || item.description || '').replace(/\n/g,'<br/>');
-      const div = document.createElement('div');
-      div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${txt}`;
-      root.appendChild(div);
+      try{
+        const res = await fetch(url, {cache:'no-cache'});
+        if(!res.ok) throw new Error('Alerts HTTP '+res.status);
+        const text = await res.text();
+        let data;
+        try{
+          data = JSON.parse(text);
+        }catch(parseErr){
+          console.error('Alerts JSON parse error', parseErr);
+          root.textContent = 'Alerts data temporarily unavailable.';
+          return;
+        }
+        root.innerHTML = '';
+        const rows = Array.isArray(data) ? data.slice(1) : [];
+        if(rows.length === 0){ root.textContent = 'No current alerts.'; return; }
+        const latestWarning = rows.filter(isWarning).sort((a,b)=>parseAlertTime(a)-parseAlertTime(b)).pop();
+        const item = latestWarning || rows.sort((a,b)=>parseAlertTime(a)-parseAlertTime(b)).pop();
+        if (!item){ root.textContent = 'No current alerts.'; return; }
+        const when = fmtTime(item.issue_datetime || item.message_issue_datetime || item.event_begin || item.event_end || item.created_at);
+        const cat = item.product_id || item.message_type || 'Alert';
+        const rawMsg = (item.message || item.summary || item.description || '');
+        const safeMsg = String(rawMsg).replace(/\n/g,'<br/>');
+        const div = document.createElement('div');
+        div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${safeMsg}`;
+        root.appendChild(div);
+      }catch(e){
+        console.error('Alerts load error', e);
+        root.textContent = 'Alerts data temporarily unavailable.';
+      }
     }
 
     // ---------- Geoelectric map (filled contours + vectors) ----------
@@ -318,7 +573,17 @@
     function initEfieldMap(){
       if (typeof L === 'undefined'){ console.error('Leaflet not loaded'); return; }
       if (efieldMap) return;
-      efieldMap = L.map('efield-map', {zoomControl:true, attributionControl:true}).setView([50,-100], 4);
+      efieldMap = L.map('efield-map', {
+        zoomControl: false,
+        attributionControl: true,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        touchZoom: false,
+        dragging: true
+      }).setView([50,-100], 4);
+      efieldMap.setMaxBounds([[5,-170],[85,-40]]);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 9,
         attribution: '&copy; OpenStreetMap contributors'
@@ -326,24 +591,16 @@
       legendCtl = L.control({position:'bottomright'});
       legendCtl.onAdd = function(){
         const d = L.DomUtil.create('div', 'legend');
-        d.innerHTML = `<div><strong>|E| (mV/km)</strong></div>
-          <div><span class="swatch" style="background:#7bd88f"></span> < 1</div>
-          <div><span class="swatch" style="background:#ffd166"></span> 1–2</div>
-          <div><span class="swatch" style="background:#ff9f5a"></span> 2–4</div>
-          <div><span class="swatch" style="background:#ff6b6b"></span> ≥ 4</div>
-          <div style="margin-top:6px"><small>Contours from interpolated |E|; arrows show (Ex,Ey) direction.</small></div>`;
+        d.innerHTML = `
+          <div><strong>|E| (mV/km)</strong></div>
+          <div id="efield-scale-min">min: —</div>
+          <div id="efield-scale-mid">mid: —</div>
+          <div id="efield-scale-max">max: —</div>
+          <div style="margin-top:6px"><small>Colors auto-scaled from 0 → mid → max in the current file.</small></div>`;
         return d;
       };
       legendCtl.addTo(efieldMap);
       efieldVectors = L.layerGroup().addTo(efieldMap);
-    }
-
-    function eColor(m){
-      if (m == null || !isFinite(m)) return '#8aa0c2';
-      if (m < 1) return '#7bd88f';
-      if (m < 2) return '#ffd166';
-      if (m < 4) return '#ff9f5a';
-      return '#ff6b6b';
     }
 
     function inferMagnitude(props){
@@ -410,15 +667,15 @@
         const ey = Number(vec[1]);
         const mag = Math.hypot(ex,ey);
         if (!isFinite(mag) || mag===0) continue;
-        const scale = 0.08;
+        const scale = 0.04; // shorter arrows
         const dLat = ey * scale;
         const dLon = ex * scale / Math.max(0.3, Math.cos(center.lat * Math.PI/180));
         const end = L.latLng(center.lat + dLat, center.lng + dLon);
-        const line = L.polyline([center, end], {color:'#cfe1ff', weight:1.3, opacity:0.9});
+        const line = L.polyline([center, end], {color:'#000000', weight:1.1, opacity:0.9});
         const back = L.latLng(end.lat - 0.2*dLat + 0.08*dLon, end.lng - 0.2*dLon - 0.08*dLat);
         const back2 = L.latLng(end.lat - 0.2*dLat - 0.08*dLon, end.lng - 0.2*dLon + 0.08*dLat);
-        const head1 = L.polyline([back, end], {color:'#cfe1ff', weight:1.3, opacity:0.9});
-        const head2 = L.polyline([back2, end], {color:'#cfe1ff', weight:1.3, opacity:0.9});
+        const head1 = L.polyline([back, end], {color:'#000000', weight:1.1, opacity:0.9});
+        const head2 = L.polyline([back2, end], {color:'#000000', weight:1.1, opacity:0.9});
         efieldVectors.addLayer(line); efieldVectors.addLayer(head1); efieldVectors.addLayer(head2);
         takenCells.add(key);
       }
@@ -455,6 +712,30 @@
       const ctx = canvas.getContext('2d');
       const bounds = map.getBounds();
 
+      // Compute max |E| (set min to 0 by request)
+      const mags = samples.map(s=>s.mag).filter(v=>isFinite(v));
+      const eMax = Math.max(...mags);
+      const eMin = 0;
+      const eMid = eMax/2;
+
+      // update legend scales
+      const elMin = document.getElementById('efield-scale-min'); if(elMin) elMin.textContent = 'min: 0.00';
+      const elMid = document.getElementById('efield-scale-mid'); if(elMid && isFinite(eMid)) elMid.textContent = 'mid: ' + eMid.toFixed(2);
+      const elMax = document.getElementById('efield-scale-max'); if(elMax && isFinite(eMax)) elMax.textContent = 'max: ' + eMax.toFixed(2);
+
+      function colorFromRange(val){
+        if (!isFinite(val)) return 'rgba(138,160,194,0.4)';
+        if (val < 1) return 'rgba(123,216,143,0.6)'; // fixed green for <1 mV/km
+        let t = (val - 1) / ((eMax - 1) || 1);
+        t = Math.max(0, Math.min(1, t));
+        const g = {r:0x7b,g:0xd8,b:0x8f};   // green
+        const r = {r:0xff,g:0x6b,b:0x6b};   // red
+        const R = Math.round(g.r + (r.r - g.r)*t);
+        const G = Math.round(g.g + (r.g - g.g)*t);
+        const B = Math.round(g.b + (r.b - g.b)*t);
+        return `rgba(${R},${G},${B},0.6)`;
+      }
+
       const gridStep = 24; // px
       for (let x = 0; x < size.x; x += gridStep){
         for (let y = 0; y < size.y; y += gridStep){
@@ -467,13 +748,14 @@
             den += w;
           }
           const val = den>0 ? num/den : samples[0].mag;
-          ctx.fillStyle = eColor(val);
+          ctx.fillStyle = colorFromRange(val);
           ctx.fillRect(x, y, gridStep+1, gridStep+1);
         }
       }
 
       const imgUrl = canvas.toDataURL('image/png');
-      return L.imageOverlay(imgUrl, bounds, {opacity:0.6});
+      const overlay = L.imageOverlay(imgUrl, bounds, {opacity:0.6}).addTo(map);
+      return overlay;
     }
 
     async function getLatestGeojsonUrl(){
@@ -482,7 +764,7 @@
       if(!res.ok) throw new Error('List HTTP '+res.status);
       const text = await res.text();
       let data = null; let names = [];
-      try{ data = JSON.parse(text); } catch(_){ /* plain text */ }
+      try{ data = JSON.parse(text); } catch(_){ /* plain text or malformed, fall back to regex */ }
       if (data){
         const arr = Array.isArray(data) ? data : (Array.isArray(data.files)? data.files : (Array.isArray(data.items)? data.items : []));
         names = arr.map(x=> typeof x==='string'? x : (x && (x.name||x.file||x.url||x.href||x[0]))).filter(Boolean);
@@ -510,7 +792,12 @@
         const geoUrl = await getLatestGeojsonUrl();
         const gjRes = await fetch(geoUrl, {cache:'no-cache'});
         if(!gjRes.ok) throw new Error('GeoJSON HTTP '+gjRes.status+` @ ${geoUrl}`);
-        let gj = await gjRes.json();
+        let gj;
+        try{
+          gj = await gjRes.json();
+        }catch(parseErr){
+          throw new Error('GeoJSON parse error: '+parseErr.message);
+        }
         gj = normalizeToFeatureCollection(gj);
         if (!gj || !gj.features) throw new Error('Malformed GeoJSON payload');
 
@@ -544,10 +831,7 @@
         // Vectors
         drawVectorsFromLayer(efieldLayer);
 
-        try{
-          const b = efieldLayer.getBounds();
-          if (b && b.isValid()) efieldMap.fitBounds(b, {padding:[20,20]});
-        } catch(_){ }
+        // Keep fixed North America view; do not auto-zoom to data bounds.
         errorEl.style.display = 'none';
       } catch(e){
         console.error('E-field load error', e);
@@ -559,7 +843,7 @@
     }
 
     async function refresh(){
-      try{ await Promise.all([loadKp(), loadKpSeries(), loadXray(), loadSolarWind(), loadAlerts()]); }
+      try{ await Promise.all([loadKp(), loadKpSeries(), loadXray(), loadSolarWind(), loadSolarCycle(), loadAlerts()]); }
       catch(e){ console.error(e); }
       finally{ setUpdated(); }
     }
@@ -613,29 +897,4 @@
           const v=Number(mock[i].xrsb);
           if(v>maxVal){maxVal=v;maxIdx=i;}
         }
-        console.assert(maxIdx===1 && xrayClassFromFlux(maxVal).startsWith('C'), 'x-ray max class selection');
-      })();
-      // Sample collection test
-      (function(){
-        const mockGj = {
-          type:'FeatureCollection',
-          features:[
-            {type:'Feature', geometry:{type:'Point', coordinates:[-100,50]}, properties:{Ex:1,Ey:1}},
-            {type:'Feature', geometry:{type:'Polygon', coordinates:[[[0,0],[1,0],[1,1],[0,1],[0,0]]]}, properties:{magnitude:2}}
-          ]
-        };
-        const s = collectEfieldSamples(mockGj);
-        console.assert(s.length===2 && s[0].latlng && s[1].latlng, 'collectEfieldSamples basic');
-      })();
-    })();
-
-    // ---------- Kickoff/refresh ----------
-    refresh();
-    refreshAuroraImages();
-    setInterval(refresh, 60*1000);
-    setInterval(refreshAuroraImages, 60*1000);
-    loadEfieldGeoJSON();
-    setInterval(loadEfieldGeoJSON, 5*60*1000);
-  </script>
-</body>
-</html>
+        console.assert(maxIdx===
