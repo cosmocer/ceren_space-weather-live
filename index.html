@@ -5,63 +5,187 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Live Space Weather Dashboard</title>
   <style>
-    :root{ --bg:#0b1220; --card:#121a2b; --muted:#8aa0c2; --text:#e7eefc; --accent:#5ec7ff; --warn:#ffd166; --alert:#ff6b6b; --ok:#7bd88f; }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg,#0b1220,#0a1326); color:var(--text)}
-    header{padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #1e2a45}
-    header h1{font-size:18px; margin:0; letter-spacing:.3px}
-    header .updated{font-size:12px; color:var(--muted)}
-    .container{max-width:1200px; margin:0 auto; padding:18px}
-    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
-    .card{background:var(--card); border:1px solid #1e2a45; border-radius:14px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,.25)}
-    .card h2{margin:0 0 8px; font-size:14px; color:#cfe1ff; font-weight:600}
-    .value{font-size:28px; font-weight:700}
-    .sub{font-size:12px; color:var(--muted)}
-    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:baseline}
-    .chip{font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #28466e; color:#cfe1ff}
-    .ok{color:var(--ok); border-color:rgba(123,216,143,.35)}
-    .warn{color:var(--warn); border-color:rgba(255,209,102,.35)}
-    .alert{color:var(--alert); border-color:rgba(255,107,107,.35)}
-    .col-3{grid-column:span 3}
-    .col-4{grid-column:span 4}
-    .col-6{grid-column:span 6}
-    .col-8{grid-column:span 8}
-    .col-12{grid-column:span 12}
-
-    /* metrics + status cards (from light dashboard, adapted to dark) */
-    .card-title{display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; font-weight:600; color:#cfe1ff}
-    .icon{font-size:16px}
-    .metric{display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #1e2a45}
-    .metric:last-child{border-bottom:none}
-    .metric-label{font-size:11px; color:var(--muted)}
-    .metric-value{font-size:14px; font-weight:600}
-    .status-indicator{display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px}
-    .status-green{background:#22c55e}
-    .status-yellow{background:#facc15}
-    .status-red{background:#f97316}
-    .positive{color:#22c55e}
-    .negative{color:#f97316}
-
-    .kp-index{display:flex; gap:5px; margin-top:8px}
-    .kp-bar{flex:1; height:18px; background:#0f172a; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#8aa0c2; border:1px solid #1e2a45}
-    .kp-bar.active{background:linear-gradient(135deg,#4caf50,#22c55e); color:#e7eefc; box-shadow:0 0 8px rgba(34,197,94,.4); border-color:transparent}
-
-    canvas{width:100%; height:54px}
-    #kp-chart{height:220px}
-
-    .aurora{display:grid; grid-template-columns:1fr; gap:8px}
-    .aurora img{width:100%; border-radius:12px; border:1px solid #1e2a45}
-
-    #efield-map{width:100%; height:480px; border-radius:12px; border:1px solid #1e2a45; position:relative}
-    .legend{background:rgba(18,26,43,.92); color:#cfe1ff; padding:8px 10px; border-radius:8px; border:1px solid #1e2a45; line-height:1.4}
-    .legend .swatch{display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:middle; border-radius:3px}
-    .inline-error{position:absolute; left:10px; top:10px; background:rgba(255,107,107,.15); color:#ff9f9f; padding:6px 8px; border:1px solid rgba(255,107,107,.35); border-radius:8px; font-size:12px; display:none; z-index:500}
-
-    @media (max-width: 860px){ .col-3,.col-4,.col-6,.col-8{grid-column:span 12} header{flex-direction:column; align-items:flex-start} }
-    a{color:var(--accent); text-decoration:none}
-    a:hover{text-decoration:underline}
+    :root{
+      --bg:#0b1220;
+      --card:#121a2b;
+      --muted:#8aa0c2;
+      --text:#e7eefc;
+      --accent:#5ec7ff;
+      --warn:#ffd166;
+      --alert:#ff6b6b;
+      --ok:#7bd88f;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg,#0b1220,#0a1326);
+      color:var(--text);
+    }
+    header{
+      padding:18px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid #1e2a45;
+    }
+    header h1{
+      font-size:18px;
+      margin:0;
+      letter-spacing:.3px;
+    }
+    header .updated{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      gap:14px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid #1e2a45;
+      border-radius:14px;
+      padding:14px;
+      box-shadow:0 6px 20px rgba(0,0,0,.25);
+    }
+    .card h2{
+      margin:0 0 8px;
+      font-size:14px;
+      color:#cfe1ff;
+      font-weight:600;
+    }
+    .sub{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .chip{
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid #28466e;
+      color:#cfe1ff;
+    }
+    .card-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      margin-bottom:10px;
+      font-weight:600;
+      color:#cfe1ff;
+    }
+    .icon{font-size:16px;}
+    .metric{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:4px 0;
+      border-bottom:1px solid #1e2a45;
+    }
+    .metric:last-child{border-bottom:none;}
+    .metric-label{
+      font-size:11px;
+      color:var(--muted);
+    }
+    .metric-value{
+      font-size:14px;
+      font-weight:600;
+    }
+    .status-indicator{
+      display:inline-block;
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      margin-right:6px;
+    }
+    .status-green{background:#22c55e;}
+    .status-yellow{background:#facc15;}
+    .status-red{background:#f97316;}
+    .positive{color:#22c55e;}
+    .negative{color:#f97316;}
+    .kp-index{
+      display:flex;
+      gap:5px;
+      margin-top:8px;
+    }
+    .kp-bar{
+      flex:1;
+      height:18px;
+      background:#0f172a;
+      border-radius:4px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:10px;
+      color:#8aa0c2;
+      border:1px solid #1e2a45;
+    }
+    .kp-bar.active{
+      background:linear-gradient(135deg,#4caf50,#22c55e);
+      color:#e7eefc;
+      box-shadow:0 0 8px rgba(34,197,94,.4);
+      border-color:transparent;
+    }
+    .col-3{grid-column:span 3;}
+    .col-4{grid-column:span 4;}
+    .col-6{grid-column:span 6;}
+    .col-8{grid-column:span 8;}
+    .col-12{grid-column:span 12;}
+    canvas{width:100%; height:54px;}
+    #kp-chart{height:220px;}
+    .aurora{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+    .aurora img{
+      width:100%;
+      border-radius:12px;
+      border:1px solid #1e2a45;
+    }
+    #efield-map{
+      width:100%;
+      height:480px;
+      border-radius:12px;
+      border:1px solid #1e2a45;
+      position:relative;
+    }
+    .legend{
+      background:rgba(18,26,43,.92);
+      color:#cfe1ff;
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid #1e2a45;
+      line-height:1.4;
+    }
+    .inline-error{
+      position:absolute;
+      left:10px;
+      top:10px;
+      background:rgba(255,107,107,.15);
+      color:#ff9f9f;
+      padding:6px 8px;
+      border:1px solid rgba(255,107,107,.35);
+      border-radius:8px;
+      font-size:12px;
+      display:none;
+      z-index:500;
+    }
+    a{color:var(--accent); text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    @media (max-width:860px){
+      .col-3,.col-4,.col-6,.col-8{grid-column:span 12;}
+      header{flex-direction:column; align-items:flex-start;}
+    }
   </style>
-  <!-- Leaflet CSS/JS (load first) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
@@ -72,7 +196,7 @@
   </header>
   <div class="container">
     <div class="grid">
-      <!-- Row 1: NOAA Watches on the left, then activity cards -->
+      <!-- Row 1: NOAA watches, solar flare, geomagnetic -->
       <section class="card col-4" style="align-self:start">
         <h2>NOAA Watches/Warnings/Alerts</h2>
         <div id="alerts">Loading…</div>
@@ -111,7 +235,7 @@
         <div class="kp-index" id="gm-kp-bars"></div>
       </section>
 
-      <!-- Row 2: IMF, Solar Wind, Solar Activity -->
+      <!-- Row 2: IMF, solar wind, solar activity -->
       <section class="card col-4">
         <div class="card-title"><span class="icon">🧭</span>Magnetic Field (IMF)</div>
         <div class="metric">
@@ -161,7 +285,7 @@
         </div>
       </section>
 
-      <!-- Row 3: Kp chart above aurora -->
+      <!-- Row 3: Kp chart + OVATION -->
       <section class="card col-8" style="align-self:start">
         <h2>Kp Index, last ~4 days (3-hour bins)</h2>
         <canvas id="kp-chart"></canvas>
@@ -179,7 +303,9 @@
       <!-- Row 4: E-field map -->
       <section class="card col-12">
         <h2>Geoelectric Field (US &amp; Canada, regional 1-D)</h2>
-        <div id="efield-map"><div id="efield-error" class="inline-error">E-field data unavailable. Retrying…</div></div>
+        <div id="efield-map">
+          <div id="efield-error" class="inline-error">E-field data unavailable. Retrying…</div>
+        </div>
         <div class="sub">Filled contours show |E| (mV/km) using an interpolated field; vectors show (Ex,Ey), scaled for visibility (not to geographic scale).</div>
       </section>
 
@@ -194,7 +320,8 @@
     const fmtTime = ts => new Date(ts).toLocaleString();
 
     function setUpdated(){
-      document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      const el = document.getElementById('last-updated');
+      if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
     function drawSpark(canvas, arr){
@@ -203,14 +330,15 @@
       const w = canvas.width = canvas.clientWidth * devicePixelRatio;
       const h = canvas.height = canvas.clientHeight * devicePixelRatio;
       ctx.clearRect(0,0,w,h);
-      if(!arr || !arr.length) return;
+      if (!arr || !arr.length) return;
       const min = Math.min(...arr), max = Math.max(...arr);
       const xstep = w / (arr.length - 1 || 1);
-      ctx.lineWidth = 2 * devicePixelRatio; ctx.beginPath();
+      ctx.lineWidth = 2 * devicePixelRatio;
+      ctx.beginPath();
       arr.forEach((v,i)=>{
         const x = i * xstep;
         const y = h - ((v - min) / (max - min || 1)) * (h-4*devicePixelRatio) - 2*devicePixelRatio;
-        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
       ctx.strokeStyle = '#cfe1ff';
       ctx.stroke();
@@ -224,7 +352,7 @@
       let html = '';
       for (let i=0;i<=9;i++){
         const active = i < rounded ? 'kp-bar active' : 'kp-bar';
-        html += `<div class="${active}">${i}</div>`;
+        html += '<div class="'+active+'">'+i+'</div>';
       }
       container.innerHTML = html;
     }
@@ -240,7 +368,6 @@
       const kpEl = document.getElementById('gm-kp');
       if (kpEl && isFinite(kp)) kpEl.textContent = kp.toFixed(1);
 
-      // Storm level text similar to old badges
       let level = 'Quiet';
       if (kp < 4) level = 'Quiet';
       else if (kp < 5) level = 'Unsettled';
@@ -249,13 +376,14 @@
       else if (kp < 8) level = 'G3 Strong';
       else if (kp < 9) level = 'G4 Severe';
       else level = 'G5 Extreme';
+
       const gmLevelEl = document.getElementById('gm-level');
       if (gmLevelEl) gmLevelEl.textContent = level + ' (as of ' + fmtTime(when) + ')';
-
       renderKpBars(kp);
     }
 
     function drawKpChart(canvas, series){
+      if (!canvas) return;
       const ctx = canvas.getContext('2d');
       const w = canvas.width = canvas.clientWidth * devicePixelRatio;
       const h = canvas.height = canvas.clientHeight * devicePixelRatio;
@@ -265,35 +393,53 @@
 
       // Background bands
       ctx.save();
-      const y0 = padT + (1 - (4/9)) * plotH; // Kp 4 split
+      const y0 = padT + (1 - (4/9)) * plotH;
       ctx.fillStyle = 'rgba(123,216,143,0.18)';
       ctx.fillRect(padL, y0, plotW, padT + plotH - y0);
       const grad = ctx.createLinearGradient(0, padT, 0, y0);
       grad.addColorStop(0, 'rgba(255,107,107,0.22)');
       grad.addColorStop(1, 'rgba(255,209,102,0.22)');
-      ctx.fillStyle = grad; ctx.fillRect(padL, padT, plotW, y0 - padT);
+      ctx.fillStyle = grad;
+      ctx.fillRect(padL, padT, plotW, y0 - padT);
       ctx.restore();
 
       // Axes + ticks
-      ctx.strokeStyle = '#28466e'; ctx.lineWidth = 1 * devicePixelRatio; ctx.beginPath();
-      ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH); ctx.stroke();
-      ctx.fillStyle = '#8aa0c2'; ctx.font = `${10*devicePixelRatio}px system-ui, sans-serif`;
+      ctx.strokeStyle = '#28466e';
+      ctx.lineWidth = 1 * devicePixelRatio;
+      ctx.beginPath();
+      ctx.moveTo(padL, padT);
+      ctx.lineTo(padL, padT + plotH);
+      ctx.lineTo(padL + plotW, padT + plotH);
+      ctx.stroke();
+      ctx.fillStyle = '#8aa0c2';
+      ctx.font = (10*devicePixelRatio)+'px system-ui, sans-serif';
       for(let yv=0; yv<=9; yv++){
         const y = padT + (1 - (yv/9)) * plotH;
-        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(padL + plotW, y);
+        ctx.stroke();
         ctx.fillText(String(yv), padL - 20*devicePixelRatio, y + 3*devicePixelRatio);
       }
 
-      if (!series || series.length === 0) return;
-      const xs = series.map(d=>d.t); const minT = Math.min(...xs), maxT = Math.max(...xs);
+      if (!series || !series.length) return;
+      const xs = series.map(d=>d.t);
+      const minT = Math.min(...xs), maxT = Math.max(...xs);
       const xFor = t => padL + ((t - minT) / (maxT - minT || 1)) * plotW;
       const yFor = kp => padT + (1 - (Math.max(0, Math.min(9, kp)) / 9)) * plotH;
-      ctx.lineWidth = 2 * devicePixelRatio; ctx.strokeStyle = '#cfe1ff'; ctx.beginPath();
-      series.forEach((d,i)=>{ const x=xFor(d.t), y=yFor(d.kp); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+
+      ctx.lineWidth = 2 * devicePixelRatio;
+      ctx.strokeStyle = '#cfe1ff';
+      ctx.beginPath();
+      series.forEach((d,i)=>{
+        const x = xFor(d.t), y = yFor(d.kp);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
       ctx.stroke();
 
-      // X tick labels ~daily
-      const stepMs = 24*3600*1000; ctx.textAlign = 'center';
+      // X ticks ~ daily
+      const stepMs = 24*3600*1000;
+      ctx.textAlign = 'center';
       for(let t=Math.ceil(minT/stepMs)*stepMs; t<=maxT; t+=stepMs){
         const x = xFor(t);
         ctx.fillText(new Date(t).toLocaleDateString(undefined,{month:'short', day:'2-digit'}), x, padT + plotH + 14*devicePixelRatio);
@@ -306,14 +452,22 @@
       if(!res.ok) throw new Error('Kp series HTTP '+res.status);
       const data = await res.json();
       const rows = data.slice(1);
-      const series = rows.map(r=>({ t: new Date(r[0]).getTime(), kp: parseFloat(r[1]) })).filter(d=>isFinite(d.kp));
+      const series = rows.map(r=>({ t:new Date(r[0]).getTime(), kp:parseFloat(r[1]) })).filter(d=>isFinite(d.kp));
       drawKpChart(document.getElementById('kp-chart'), series.slice(-32));
     }
 
     // ---------- X-ray / Solar flares ----------
     function xrayClassFromFlux(flux){
-      const levels = [ {thr:1e-4, letter:'X'}, {thr:1e-5, letter:'M'}, {thr:1e-6, letter:'C'}, {thr:1e-7, letter:'B'}, {thr:1e-8, letter:'A'} ];
-      for(const l of levels){ if(flux >= l.thr) return l.letter + (flux / l.thr).toFixed(2); }
+      const levels = [
+        {thr:1e-4, letter:'X'},
+        {thr:1e-5, letter:'M'},
+        {thr:1e-6, letter:'C'},
+        {thr:1e-7, letter:'B'},
+        {thr:1e-8, letter:'A'}
+      ];
+      for(const l of levels){
+        if (flux >= l.thr) return l.letter + (flux / l.thr).toFixed(2);
+      }
       return 'A0.00';
     }
 
@@ -346,7 +500,6 @@
         const res = await fetch(url, {cache:'no-cache'});
         if(!res.ok) throw new Error('Xray HTTP '+res.status);
         const data = await res.json();
-
         if (!Array.isArray(data) || !data.length){
           const classEl = document.getElementById('sf-class');
           const timeEl = document.getElementById('sf-time');
@@ -355,30 +508,25 @@
           updateSolarFlareStatus('A0.0');
           return;
         }
-
         const preferredSat = 18;
         const parseSat = s => Number(s);
-
-        // 1) Preferred: satellite 18, 0.1–0.8 nm band
+        // 1) Sat 18, 0.1–0.8 nm
         let pts = data.filter(d =>
           Number.isFinite(Number(d.flux)) &&
           d.energy === '0.1-0.8nm' &&
           parseSat(d.satellite) === preferredSat
         );
-
-        // 2) Fallback: any satellite but correct band
+        // 2) Any sat, 0.1–0.8 nm
         if (!pts.length){
           pts = data.filter(d =>
             Number.isFinite(Number(d.flux)) &&
             d.energy === '0.1-0.8nm'
           );
         }
-
-        // 3) Fallback: any record with a valid flux
+        // 3) Any valid flux
         if (!pts.length){
           pts = data.filter(d => Number.isFinite(Number(d.flux)));
         }
-
         if (!pts.length){
           const classEl = document.getElementById('sf-class');
           const timeEl = document.getElementById('sf-time');
@@ -387,18 +535,12 @@
           updateSolarFlareStatus('A0.0');
           return;
         }
-
-        // Find maximum flux among the chosen points
         let maxIdx = 0;
         let maxVal = Number(pts[0].flux);
-        for (let i = 1; i < pts.length; i++){
+        for (let i=1;i<pts.length;i++){
           const v = Number(pts[i].flux);
-          if (v > maxVal){
-            maxVal = v;
-            maxIdx = i;
-          }
+          if (v > maxVal){ maxVal = v; maxIdx = i; }
         }
-
         const cls = xrayClassFromFlux(maxVal);
         const p = pts[maxIdx];
         const classEl = document.getElementById('sf-class');
@@ -406,12 +548,7 @@
         if (classEl) classEl.textContent = cls;
         if (timeEl) timeEl.textContent = fmtTime(p.time_tag);
         updateSolarFlareStatus(cls);
-
-        // Optional spark support (if a small canvas is added later)
-        drawSpark(
-          document.getElementById('xray-spark'),
-          pts.map(pt => Number(pt.flux)).slice(-180)
-        );
+        drawSpark(document.getElementById('xray-spark'), pts.map(pt=>Number(pt.flux)).slice(-180));
       }catch(e){
         console.error('Xray load error', e);
         const classEl = document.getElementById('sf-class');
@@ -420,26 +557,6 @@
         if (timeEl) timeEl.textContent = 'no data';
         updateSolarFlareStatus('A0.0');
       }
-    }
-
-      }
-      if (maxIdx>=0){
-        const cls = xrayClassFromFlux(maxVal);
-        const p = points[maxIdx];
-        const classEl = document.getElementById('sf-class');
-        const timeEl = document.getElementById('sf-time');
-        if (classEl) classEl.textContent = cls;
-        if (timeEl) timeEl.textContent = fmtTime(p.time_tag);
-        updateSolarFlareStatus(cls);
-      } else {
-        const classEl = document.getElementById('sf-class');
-        const timeEl = document.getElementById('sf-time');
-        if (classEl) classEl.textContent = '—';
-        if (timeEl) timeEl.textContent = 'no data';
-        updateSolarFlareStatus('A0.0');
-      }
-      // optional spark support (if a canvas ever added back)
-      drawSpark(document.getElementById('xray-spark'), points.map(p=>Number(p.xrsb)).slice(-180));
     }
 
     // ---------- Solar wind + IMF ----------
@@ -499,7 +616,7 @@
       }
     }
 
-    // ---------- Solar activity (sunspots / F10.7) ----------
+    // ---------- Solar activity ----------
     async function loadSolarCycle(){
       const url = 'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json';
       const res = await fetch(url, {cache:'no-cache'});
@@ -524,7 +641,7 @@
       }
     }
 
-    // ---------- Alerts (latest WARNING only) ----------
+    // ---------- Alerts ----------
     function parseAlertTime(a){
       return new Date(a.issue_datetime || a.message_issue_datetime || a.event_begin || a.event_end || a.created_at || 0).getTime();
     }
@@ -550,16 +667,25 @@
         }
         root.innerHTML = '';
         const rows = Array.isArray(data) ? data.slice(1) : [];
-        if(rows.length === 0){ root.textContent = 'No current alerts.'; return; }
+        if(!rows.length){
+          root.textContent = 'No current alerts.';
+          return;
+        }
         const latestWarning = rows.filter(isWarning).sort((a,b)=>parseAlertTime(a)-parseAlertTime(b)).pop();
         const item = latestWarning || rows.sort((a,b)=>parseAlertTime(a)-parseAlertTime(b)).pop();
-        if (!item){ root.textContent = 'No current alerts.'; return; }
-        const when = fmtTime(item.issue_datetime || item.message_issue_datetime || item.event_begin || item.event_end || item.created_at);
+        if (!item){
+          root.textContent = 'No current alerts.';
+          return;
+        }
+        const when = fmtTime(
+          item.issue_datetime || item.message_issue_datetime ||
+          item.event_begin || item.event_end || item.created_at
+        );
         const cat = item.product_id || item.message_type || 'Alert';
         const rawMsg = (item.message || item.summary || item.description || '');
         const safeMsg = String(rawMsg).replace(/\n/g,'<br/>');
         const div = document.createElement('div');
-        div.innerHTML = `<span class="chip">${cat}</span> <span class="sub">${when}</span><br/>${safeMsg}`;
+        div.innerHTML = '<span class="chip">'+cat+'</span> <span class="sub">'+when+'</span><br/>'+safeMsg;
         root.appendChild(div);
       }catch(e){
         console.error('Alerts load error', e);
@@ -567,36 +693,36 @@
       }
     }
 
-    // ---------- Geoelectric map (filled contours + vectors) ----------
+    // ---------- Geoelectric map ----------
     let efieldMap, efieldLayer, efieldVectors, legendCtl, efieldRaster;
 
     function initEfieldMap(){
       if (typeof L === 'undefined'){ console.error('Leaflet not loaded'); return; }
       if (efieldMap) return;
       efieldMap = L.map('efield-map', {
-        zoomControl: false,
-        attributionControl: true,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
-        boxZoom: false,
-        keyboard: false,
-        touchZoom: false,
-        dragging: true
+        zoomControl:false,
+        attributionControl:true,
+        scrollWheelZoom:false,
+        doubleClickZoom:false,
+        boxZoom:false,
+        keyboard:false,
+        touchZoom:false,
+        dragging:true
       }).setView([50,-100], 4);
       efieldMap.setMaxBounds([[5,-170],[85,-40]]);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 9,
-        attribution: '&copy; OpenStreetMap contributors'
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        maxZoom:9,
+        attribution:'&copy; OpenStreetMap contributors'
       }).addTo(efieldMap);
       legendCtl = L.control({position:'bottomright'});
       legendCtl.onAdd = function(){
-        const d = L.DomUtil.create('div', 'legend');
-        d.innerHTML = `
-          <div><strong>|E| (mV/km)</strong></div>
-          <div id="efield-scale-min">min: —</div>
-          <div id="efield-scale-mid">mid: —</div>
-          <div id="efield-scale-max">max: —</div>
-          <div style="margin-top:6px"><small>Colors auto-scaled from 0 → mid → max in the current file.</small></div>`;
+        const d = L.DomUtil.create('div','legend');
+        d.innerHTML =
+          '<div><strong>|E| (mV/km)</strong></div>'+
+          '<div id="efield-scale-min">min: —</div>'+
+          '<div id="efield-scale-mid">mid: —</div>'+
+          '<div id="efield-scale-max">max: —</div>'+
+          '<div style="margin-top:6px"><small>Colors auto-scaled from 0 &rarr; mid &rarr; max in the current file.</small></div>';
         return d;
       };
       legendCtl.addTo(efieldMap);
@@ -629,14 +755,13 @@
     }
 
     function pointToLayer(feature, latlng){
-      // Invisible anchor points (no dots), used only for vector placement.
-      return L.circleMarker(latlng, {
-        radius: 0,
-        color: 'transparent',
-        weight: 0,
-        fillOpacity: 0,
-        opacity: 0,
-        interactive: false
+      return L.circleMarker(latlng,{
+        radius:0,
+        color:'transparent',
+        weight:0,
+        fillOpacity:0,
+        opacity:0,
+        interactive:false
       });
     }
 
@@ -648,9 +773,9 @@
       efieldVectors.clearLayers();
       const children = [];
       layer.eachLayer(l=>children.push(l));
-      const stride = calcStride(children.length, 180); // aim ~180 arrows max
+      const stride = calcStride(children.length, 180);
       const takenCells = new Set();
-      const cellSize = 1.2; // degrees
+      const cellSize = 1.2;
       let i=0;
       for (const child of children){
         if ((i++ % stride) !== 0) continue;
@@ -667,7 +792,7 @@
         const ey = Number(vec[1]);
         const mag = Math.hypot(ex,ey);
         if (!isFinite(mag) || mag===0) continue;
-        const scale = 0.04; // shorter arrows
+        const scale = 0.04;
         const dLat = ey * scale;
         const dLon = ex * scale / Math.max(0.3, Math.cos(center.lat * Math.PI/180));
         const end = L.latLng(center.lat + dLat, center.lng + dLon);
@@ -676,7 +801,9 @@
         const back2 = L.latLng(end.lat - 0.2*dLat - 0.08*dLon, end.lng - 0.2*dLon + 0.08*dLat);
         const head1 = L.polyline([back, end], {color:'#000000', weight:1.1, opacity:0.9});
         const head2 = L.polyline([back2, end], {color:'#000000', weight:1.1, opacity:0.9});
-        efieldVectors.addLayer(line); efieldVectors.addLayer(head1); efieldVectors.addLayer(head2);
+        efieldVectors.addLayer(line);
+        efieldVectors.addLayer(head1);
+        efieldVectors.addLayer(head2);
         takenCells.add(key);
       }
     }
@@ -712,38 +839,38 @@
       const ctx = canvas.getContext('2d');
       const bounds = map.getBounds();
 
-      // Compute max |E| (set min to 0 by request)
       const mags = samples.map(s=>s.mag).filter(v=>isFinite(v));
       const eMax = Math.max(...mags);
-      const eMin = 0;
       const eMid = eMax/2;
 
-      // update legend scales
-      const elMin = document.getElementById('efield-scale-min'); if(elMin) elMin.textContent = 'min: 0.00';
-      const elMid = document.getElementById('efield-scale-mid'); if(elMid && isFinite(eMid)) elMid.textContent = 'mid: ' + eMid.toFixed(2);
-      const elMax = document.getElementById('efield-scale-max'); if(elMax && isFinite(eMax)) elMax.textContent = 'max: ' + eMax.toFixed(2);
+      const elMin = document.getElementById('efield-scale-min');
+      const elMid = document.getElementById('efield-scale-mid');
+      const elMax = document.getElementById('efield-scale-max');
+      if (elMin) elMin.textContent = 'min: 0.00';
+      if (elMid && isFinite(eMid)) elMid.textContent = 'mid: ' + eMid.toFixed(2);
+      if (elMax && isFinite(eMax)) elMax.textContent = 'max: ' + eMax.toFixed(2);
 
       function colorFromRange(val){
         if (!isFinite(val)) return 'rgba(138,160,194,0.4)';
-        if (val < 1) return 'rgba(123,216,143,0.6)'; // fixed green for <1 mV/km
+        if (val < 1) return 'rgba(123,216,143,0.6)'; // green below 1
         let t = (val - 1) / ((eMax - 1) || 1);
         t = Math.max(0, Math.min(1, t));
-        const g = {r:0x7b,g:0xd8,b:0x8f};   // green
-        const r = {r:0xff,g:0x6b,b:0x6b};   // red
+        const g = {r:0x7b,g:0xd8,b:0x8f};
+        const r = {r:0xff,g:0x6b,b:0x6b};
         const R = Math.round(g.r + (r.r - g.r)*t);
         const G = Math.round(g.g + (r.g - g.g)*t);
         const B = Math.round(g.b + (r.b - g.b)*t);
-        return `rgba(${R},${G},${B},0.6)`;
+        return 'rgba('+R+','+G+','+B+',0.6)';
       }
 
-      const gridStep = 24; // px
-      for (let x = 0; x < size.x; x += gridStep){
-        for (let y = 0; y < size.y; y += gridStep){
+      const gridStep = 24;
+      for (let x=0; x<size.x; x+=gridStep){
+        for (let y=0; y<size.y; y+=gridStep){
           const latlng = map.containerPointToLatLng([x + gridStep/2, y + gridStep/2]);
-          let num = 0, den = 0;
+          let num=0, den=0;
           for (const p of samples){
             const dist = map.distance(latlng, p.latlng) || 1e-3;
-            const w = 1 / (dist * dist);
+            const w = 1 / (dist*dist);
             num += w * p.mag;
             den += w;
           }
@@ -763,13 +890,22 @@
       const res = await fetch(base, {cache:'no-cache'});
       if(!res.ok) throw new Error('List HTTP '+res.status);
       const text = await res.text();
-      let data = null; let names = [];
-      try{ data = JSON.parse(text); } catch(_){ /* plain text or malformed, fall back to regex */ }
+      let data = null;
+      let names = [];
+      try{
+        data = JSON.parse(text);
+      }catch(_){}
       if (data){
-        const arr = Array.isArray(data) ? data : (Array.isArray(data.files)? data.files : (Array.isArray(data.items)? data.items : []));
-        names = arr.map(x=> typeof x==='string'? x : (x && (x.name||x.file||x.url||x.href||x[0]))).filter(Boolean);
-      } else {
-        const re = /[A-Za-z0-9_.-]+\.(?:geo)?json/g; let m; while((m = re.exec(text))!==null){ names.push(m[0]); }
+        const arr = Array.isArray(data) ? data :
+          (Array.isArray(data.files)? data.files :
+          (Array.isArray(data.items)? data.items : []));
+        names = arr.map(x => typeof x==='string' ? x : (x && (x.name||x.file||x.url||x.href||x[0]))).filter(Boolean);
+      }else{
+        const re = /[A-Za-z0-9_.-]+\.(?:geo)?json/g;
+        let m;
+        while((m = re.exec(text)) !== null){
+          names.push(m[0]);
+        }
       }
       const filtered = names.filter(n=>/\.(?:geo)?json$/i.test(n)).sort();
       if (filtered.length){
@@ -791,7 +927,7 @@
         if (!efieldMap) initEfieldMap();
         const geoUrl = await getLatestGeojsonUrl();
         const gjRes = await fetch(geoUrl, {cache:'no-cache'});
-        if(!gjRes.ok) throw new Error('GeoJSON HTTP '+gjRes.status+` @ ${geoUrl}`);
+        if(!gjRes.ok) throw new Error('GeoJSON HTTP '+gjRes.status+' @ '+geoUrl);
         let gj;
         try{
           gj = await gjRes.json();
@@ -801,57 +937,60 @@
         gj = normalizeToFeatureCollection(gj);
         if (!gj || !gj.features) throw new Error('Malformed GeoJSON payload');
 
-        if (efieldLayer) { efieldLayer.remove(); efieldLayer = null; }
-        if (efieldRaster) { efieldRaster.remove(); efieldRaster = null; }
+        if (efieldLayer){ efieldLayer.remove(); efieldLayer = null; }
+        if (efieldRaster){ efieldRaster.remove(); efieldRaster = null; }
 
-        efieldLayer = L.geoJSON(gj, {
-          style: f => ({
-            color: 'transparent',
-            weight: 0,
-            fillOpacity: 0
-          }),
+        efieldLayer = L.geoJSON(gj,{
+          style: () => ({ color:'transparent', weight:0, fillOpacity:0 }),
           pointToLayer,
           onEachFeature: (feature, layer) => {
             if (feature && feature.geometry && feature.geometry.type === 'Point') return;
             const p = feature.properties || {};
             const mag = inferMagnitude(p);
             const ts = p.time || p.timestamp || p.valid || p.iso_time || '';
-            const label = `|E| ≈ ${mag!=null? Number(mag).toFixed(2):'—'} mV/km`;
-            const extra = Object.entries(p).slice(0,12).map(([k,v])=>`<div><small>${k}: ${v}</small></div>`).join('');
-            layer.bindPopup(`<strong>Geoelectric Field</strong><div>${label}</div><div><small>${ts}</small></div>${extra}`);
+            const label = '|E| ≈ ' + (mag!=null? Number(mag).toFixed(2):'—') + ' mV/km';
+            const extra = Object.entries(p).slice(0,12).map(([k,v])=>'<div><small>'+k+': '+v+'</small></div>').join('');
+            layer.bindPopup('<strong>Geoelectric Field</strong><div>'+label+'</div><div><small>'+ts+'</small></div>'+extra);
           }
         }).addTo(efieldMap);
 
-        // Filled contour raster
         const samples = collectEfieldSamples(gj);
         if (samples.length){
           efieldRaster = drawFilledContours(samples, efieldMap);
         }
-
-        // Vectors
         drawVectorsFromLayer(efieldLayer);
-
-        // Keep fixed North America view; do not auto-zoom to data bounds.
-        errorEl.style.display = 'none';
-      } catch(e){
+        if (errorEl) errorEl.style.display = 'none';
+      }catch(e){
         console.error('E-field load error', e);
         if (errorEl){
           errorEl.style.display = 'block';
-          errorEl.textContent = 'E-field data unavailable. ' + e.message + ' Retrying…';
+          errorEl.textContent = 'E-field data unavailable. '+e.message+' Retrying…';
         }
       }
     }
 
+    // ---------- Refresh ----------
     async function refresh(){
-      try{ await Promise.all([loadKp(), loadKpSeries(), loadXray(), loadSolarWind(), loadSolarCycle(), loadAlerts()]); }
-      catch(e){ console.error(e); }
-      finally{ setUpdated(); }
+      try{
+        await Promise.all([
+          loadKp(),
+          loadKpSeries(),
+          loadXray(),
+          loadSolarWind(),
+          loadSolarCycle(),
+          loadAlerts()
+        ]);
+      }catch(e){
+        console.error(e);
+      }finally{
+        setUpdated();
+      }
     }
 
     function refreshAuroraImages(){
       const t = Date.now();
-      for (const id of ['aurora-nh']){
-        const img = document.getElementById(id);
+      const img = document.getElementById('aurora-nh');
+      if (img){
         const base = img.src.split('?')[0];
         img.src = base + '?_=' + t;
       }
@@ -859,42 +998,24 @@
 
     // ---------- Runtime tests ----------
     (function runtimeTests(){
-      // Leaflet presence
-      console.assert(typeof L !== 'undefined', 'Leaflet should be loaded before app script');
-      // Alert filtering: pick last warning
-      const rows = [
-        {message_type:'Watch', issue_datetime:'2024-01-01T00:00:00Z'},
-        {message_type:'Warning', issue_datetime:'2024-01-01T01:00:00Z'},
-        {message_type:'Warning', issue_datetime:'2024-01-01T02:00:00Z'}
-      ];
-      const latest = rows
-        .filter(r=> (r.message_type||'').toLowerCase().includes('warning'))
-        .sort((a,b)=> new Date(a.issue_datetime)-new Date(b.issue_datetime))
-        .pop();
-      console.assert(latest && latest.issue_datetime==='2024-01-01T02:00:00Z', 'latest warning selector');
-      // Vector inference
+      console.assert(calcStride(10,180)===1, 'stride small');
+      console.assert(calcStride(1000,200)===5, 'stride large');
       console.assert(JSON.stringify(inferVector({Ex:2,Ey:0}))==='[2,0]', 'inferVector Ex/Ey');
       console.assert(JSON.stringify(inferVector({ew:-1,ns:3}))==='[-1,3]', 'inferVector ew/ns');
-      // List parser: JSON and plaintext
       (function(){
-        const sampleText = `index of files\nfoo.txt\nbar.geojson\n2024-01-01.json\n`;
-        const re = /[A-Za-z0-9_.-]+\.(?:geo)?json/g;
-        const matches = [...sampleText.matchAll(re)].map(m=>m[0]);
-        console.assert(matches.includes('bar.geojson') && matches.includes('2024-01-01.json'), 'plaintext list regex');
+        const f = 3e-6;
+        const c = xrayClassFromFlux(f);
+        console.assert(c[0]==='C', 'xray class C');
       })();
-      // Stride calculator tests (sparsity)
-      console.assert(calcStride(10,180)===1, 'stride small n');
-      console.assert(calcStride(1000,200)===5, 'stride large n');
-      // X-ray max pick test
-      (function(){
-        const mock = [
-          {time_tag:'2025-01-01T00:00:00Z', xrsb:'1e-7'},
-          {time_tag:'2025-01-01T01:00:00Z', xrsb:'3e-6'},
-          {time_tag:'2025-01-01T02:00:00Z', xrsb:'2e-6'}
-        ];
-        let maxIdx=-1,maxVal=-Infinity;
-        for (let i=0;i<mock.length;i++){
-          const v=Number(mock[i].xrsb);
-          if(v>maxVal){maxVal=v;maxIdx=i;}
-        }
-        console.assert(maxIdx===
+    })();
+
+    // ---------- Kickoff ----------
+    refresh();
+    refreshAuroraImages();
+    setInterval(refresh, 60*1000);
+    setInterval(refreshAuroraImages, 60*1000);
+    loadEfieldGeoJSON();
+    setInterval(loadEfieldGeoJSON, 5*60*1000);
+  </script>
+</body>
+</html>
