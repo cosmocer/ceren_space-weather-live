@@ -176,11 +176,33 @@
             gap: 10px;
         }
         
-        .map-image {
+        #efieldCanvas {
             width: 100%;
-            height: auto;
             border-radius: 10px;
             border: 2px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+        
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .legend-gradient {
+            width: 200px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
         }
         
         .loading {
@@ -232,19 +254,44 @@
                 <span class="icon">🗺️</span>
                 Geoelectric Field - US & Canada (1-Minute)
             </div>
-            <img id="geoelectricMap" class="map-image" src="https://services.swpc.noaa.gov/images/animations/geospace/mugl/latest.png" alt="Geoelectric Field Map" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22400%22%3E%3Crect fill=%22%23f5f5f5%22 width=%22800%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2220%22%3EMap loading...%3C/text%3E%3C/svg%3E'">
-            <div class="last-update">Map updates every minute from NOAA SWPC</div>
+            <div style="position: relative;">
+                <canvas id="efieldCanvas" width="1200" height="700" style="display: none;"></canvas>
+                <img id="noaaMapImage" src="https://services.swpc.noaa.gov/images/us-canada-efield.gif" 
+                     style="width: 100%; border-radius: 10px; border: 2px solid #e0e0e0;"
+                     alt="NOAA Geoelectric Field Map"
+                     onerror="this.style.display='none'; document.getElementById('mapFallback').style.display='block';">
+                <div id="mapFallback" style="display: none; padding: 40px; text-align: center; background: #f5f5f5; border-radius: 10px; border: 2px dashed #ccc;">
+                    <p style="color: #666; margin-bottom: 15px;">📊 Live map unavailable</p>
+                    <a href="https://www.swpc.noaa.gov/products/geoelectric-field-models-1-minute" 
+                       target="_blank" 
+                       style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                        View Live Maps at NOAA SWPC →
+                    </a>
+                </div>
+            </div>
+            <div class="legend" id="customLegend" style="display: none;">
+                <div class="legend-item">
+                    <span>Magnitude (mV/km):</span>
+                    <div class="legend-gradient" style="background: linear-gradient(to right, #4caf50, #ffeb3b, #ff9800, #f44336);"></div>
+                    <span>0 → High</span>
+                </div>
+                <div class="legend-item">
+                    <span style="font-size: 1.2em;">→</span>
+                    <span>Vector direction (Ex, Ey)</span>
+                </div>
+            </div>
+            <div class="last-update" id="mapUpdate">Displaying NOAA's official geoelectric field map. Updates every minute.</div>
         </div>
         
         <div class="last-update" id="lastUpdate"></div>
     </div>
 
     <script>
+        let efieldData = null;
+        
         async function fetchSpaceWeather() {
             try {
                 // Simulating API data - in production, you'd fetch from NOAA, NASA, or other space weather APIs
-                // Example endpoints: https://services.swpc.noaa.gov/products/noaa-scales.json
-                
                 const data = {
                     solarFlare: {
                         status: 'moderate',
@@ -284,7 +331,6 @@
         }
         
         function displayData(data) {
-            const kpColors = ['#4caf50', '#4caf50', '#ff9800', '#ff9800', '#ff5722', '#f44336'];
             const statusColor = data.geomagneticStorm.kpIndex <= 2 ? 'green' : 
                                data.geomagneticStorm.kpIndex <= 4 ? 'yellow' : 'red';
             
@@ -410,11 +456,224 @@
                 `Last updated: ${new Date().toLocaleString()}`;
         }
         
-        // Refresh the geoelectric map every minute
-        function refreshMap() {
-            const img = document.getElementById('geoelectricMap');
-            const timestamp = new Date().getTime();
-            img.src = `https://services.swpc.noaa.gov/images/animations/geospace/mugl/latest.png?t=${timestamp}`;
+        async function fetchEfieldData() {
+            try {
+                // Try using CORS proxy
+                const corsProxy = 'https://corsproxy.io/?';
+                
+                // First, fetch the directory listing
+                const dirResponse = await fetch(corsProxy + encodeURIComponent('https://services.swpc.noaa.gov/json/lists/rgeojson/US-Canada-1D/'));
+                const dirText = await dirResponse.text();
+                
+                // Parse HTML to find all .json files
+                const jsonFiles = [];
+                const regex = /href="([^"]+\.json)"/g;
+                let match;
+                while ((match = regex.exec(dirText)) !== null) {
+                    jsonFiles.push(match[1]);
+                }
+                
+                if (jsonFiles.length === 0) {
+                    throw new Error('No data files found');
+                }
+                
+                // Get the last (most recent) file
+                const latestFile = jsonFiles[jsonFiles.length - 1];
+                const fileUrl = `https://services.swpc.noaa.gov/json/lists/rgeojson/US-Canada-1D/${latestFile}`;
+                
+                // Fetch the actual data through proxy
+                const dataResponse = await fetch(corsProxy + encodeURIComponent(fileUrl));
+                const data = await dataResponse.json();
+                
+                efieldData = data;
+                drawEfieldMap(data);
+            } catch (error) {
+                console.error('Error fetching electric field data:', error);
+                document.getElementById('mapUpdate').innerHTML = 
+                    `<span style="color: #f44336;">⚠️ Unable to fetch live data due to CORS restrictions.</span><br>
+                    <span style="font-size: 0.85em;">To use live data, you'll need to:</span><br>
+                    <span style="font-size: 0.85em;">1. Host this page on a server with backend proxy, or</span><br>
+                    <span style="font-size: 0.85em;">2. Use a browser extension to disable CORS, or</span><br>
+                    <span style="font-size: 0.85em;">3. Access data at: <a href="https://www.swpc.noaa.gov/products/geoelectric-field-models-1-minute" target="_blank" style="color: #1976d2;">NOAA SWPC</a></span>`;
+            }
+        }
+        
+        function getColor(magnitude, maxMag) {
+            // Normalize magnitude to 0-1
+            const t = Math.min(magnitude / maxMag, 1);
+            
+            // Color gradient: green -> yellow -> orange -> red
+            if (t < 0.33) {
+                const s = t / 0.33;
+                return `rgb(${Math.round(76 + (255-76)*s)}, ${Math.round(175 + (235-175)*s)}, ${Math.round(80 + (59-80)*s)})`;
+            } else if (t < 0.66) {
+                const s = (t - 0.33) / 0.33;
+                return `rgb(${255}, ${Math.round(235 - (235-152)*s)}, ${Math.round(59 + (0-59)*s)})`;
+            } else {
+                const s = (t - 0.66) / 0.34;
+                return `rgb(${255}, ${Math.round(152 - (152-68)*s)}, ${Math.round(0 + (54-0)*s)})`;
+            }
+        }
+        
+        function drawEfieldMap(data) {
+            const canvas = document.getElementById('efieldCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, width, height);
+            
+            if (!data || !data.length) {
+                ctx.fillStyle = '#666';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data available', width/2, height/2);
+                return;
+            }
+            
+            // Find bounds
+            let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+            let maxMagnitude = 0;
+            
+            data.forEach(point => {
+                const coords = point.geometry.coordinates;
+                const lon = coords[0];
+                const lat = coords[1];
+                const ex = point.properties.Ex || 0;
+                const ey = point.properties.Ey || 0;
+                const mag = Math.sqrt(ex * ex + ey * ey);
+                
+                minLat = Math.min(minLat, lat);
+                maxLat = Math.max(maxLat, lat);
+                minLon = Math.min(minLon, lon);
+                maxLon = Math.max(maxLon, lon);
+                maxMagnitude = Math.max(maxMagnitude, mag);
+            });
+            
+            // Add padding
+            const padding = 40;
+            const mapWidth = width - 2 * padding;
+            const mapHeight = height - 2 * padding;
+            
+            // Projection functions
+            const lonToX = lon => padding + ((lon - minLon) / (maxLon - minLon)) * mapWidth;
+            const latToY = lat => padding + ((maxLat - lat) / (maxLat - minLat)) * mapHeight;
+            
+            // Draw country borders (simplified)
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(padding, padding, mapWidth, mapHeight);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 0.5;
+            for (let i = 1; i < 10; i++) {
+                const x = padding + (mapWidth / 10) * i;
+                const y = padding + (mapHeight / 10) * i;
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, padding + mapHeight);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(padding + mapWidth, y);
+                ctx.stroke();
+            }
+            
+            // Draw magnitude as colored circles
+            data.forEach(point => {
+                const coords = point.geometry.coordinates;
+                const lon = coords[0];
+                const lat = coords[1];
+                const ex = point.properties.Ex || 0;
+                const ey = point.properties.Ey || 0;
+                const mag = Math.sqrt(ex * ex + ey * ey);
+                
+                const x = lonToX(lon);
+                const y = latToY(lat);
+                
+                ctx.fillStyle = getColor(mag, maxMagnitude);
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Draw vectors (sparse sampling for clarity)
+            const vectorScale = 15;
+            const gridSpacing = 4; // Draw every Nth point
+            
+            ctx.strokeStyle = '#333';
+            ctx.fillStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            data.forEach((point, index) => {
+                if (index % gridSpacing !== 0) return;
+                
+                const coords = point.geometry.coordinates;
+                const lon = coords[0];
+                const lat = coords[1];
+                const ex = point.properties.Ex || 0;
+                const ey = point.properties.Ey || 0;
+                const mag = Math.sqrt(ex * ex + ey * ey);
+                
+                if (mag < 0.01) return; // Skip very small vectors
+                
+                const x = lonToX(lon);
+                const y = latToY(lat);
+                
+                // Normalize and scale vector
+                const scale = vectorScale * Math.min(mag / maxMagnitude, 1);
+                const vx = (ex / mag) * scale;
+                const vy = -(ey / mag) * scale; // Negative because canvas Y is inverted
+                
+                // Draw arrow
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + vx, y + vy);
+                ctx.stroke();
+                
+                // Draw arrowhead
+                const angle = Math.atan2(vy, vx);
+                const arrowSize = 5;
+                ctx.beginPath();
+                ctx.moveTo(x + vx, y + vy);
+                ctx.lineTo(
+                    x + vx - arrowSize * Math.cos(angle - Math.PI / 6),
+                    y + vy - arrowSize * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.moveTo(x + vx, y + vy);
+                ctx.lineTo(
+                    x + vx - arrowSize * Math.cos(angle + Math.PI / 6),
+                    y + vy - arrowSize * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.stroke();
+            });
+            
+            // Draw labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Latitude: ${minLat.toFixed(1)}° - ${maxLat.toFixed(1)}°`, width / 2, height - 10);
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`Longitude: ${minLon.toFixed(1)}° - ${maxLon.toFixed(1)}°`, 0, 0);
+            ctx.restore();
+            
+            // Update timestamp
+            document.getElementById('mapUpdate').textContent = 
+                `Electric field data updated: ${new Date().toLocaleString()} | Max magnitude: ${maxMagnitude.toFixed(2)} mV/km`;
+        }
+        
+        // Auto-refresh NOAA map image every minute
+        function refreshNoaaMap() {
+            const img = document.getElementById('noaaMapImage');
+            if (img) {
+                const timestamp = new Date().getTime();
+                img.src = `https://services.swpc.noaa.gov/images/us-canada-efield.gif?t=${timestamp}`;
+            }
         }
         
         // Initial load
@@ -423,8 +682,8 @@
         // Refresh data every 5 minutes
         setInterval(fetchSpaceWeather, 5 * 60 * 1000);
         
-        // Refresh map every minute
-        setInterval(refreshMap, 60 * 1000);
+        // Refresh NOAA map every minute
+        setInterval(refreshNoaaMap, 60 * 1000);
     </script>
 </body>
 </html>
