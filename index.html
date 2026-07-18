@@ -620,59 +620,143 @@
     }
 
     // ---------- Solar wind + IMF ----------
-    async function loadSolarWind(){
-      const plasmaUrl = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json';
-      const magUrl = 'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json';
-      const [pRes, mRes] = await Promise.all([
-        fetch(plasmaUrl, {cache:'no-cache'}),
-        fetch(magUrl, {cache:'no-cache'})
-      ]);
-      if(!pRes.ok) throw new Error('Plasma HTTP '+pRes.status);
-      if(!mRes.ok) throw new Error('Mag HTTP '+mRes.status);
-      const plasma = await pRes.json();
-      const mag = await mRes.json();
-      const pRow = plasma[plasma.length-1];
-      const mRow = mag[mag.length-1];
-      const speed = parseFloat(pRow[2]);
-      const density = parseFloat(pRow[1]);
-      const temp = parseFloat(pRow[3]);
-      const bt = parseFloat(mRow[6]);
-      const bz = parseFloat(mRow[3]);
+    // NOAA retired the old products/solar-wind/* feeds in 2026.  The
+    // replacement RTSW feeds are arrays of objects and expose the active
+    // spacecraft explicitly.
+    const RTSW_WIND_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json';
+    const RTSW_MAG_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json';
 
-      const speedEl = document.getElementById('sw-speed');
-      if (speedEl) speedEl.textContent = isFinite(speed)? speed.toFixed(0): '—';
-      const densEl = document.getElementById('sw-density');
-      if (densEl) densEl.textContent = isFinite(density)? density.toFixed(1): '—';
-      const tempEl = document.getElementById('sw-temp');
-      if (tempEl) tempEl.textContent = isFinite(temp)? temp.toFixed(0): '—';
+    async function fetchRtswRows(url, label){
+      const res = await fetch(url, {cache:'no-cache'});
+      if (!res.ok) throw new Error(label + ' HTTP ' + res.status);
 
-      const btEl = document.getElementById('imf-bt');
-      if (btEl) btEl.textContent = isFinite(bt)? bt.toFixed(1): '—';
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        throw new Error(label + ' format not recognized');
+      }
+
+      const rows = data.filter(row =>
+        row && typeof row === 'object' && !Array.isArray(row)
+      );
+      if (!rows.length) throw new Error(label + ' contains no observations');
+      return rows;
+    }
+
+    function toFiniteNumber(value){
+      if (value === null || value === undefined || value === '') return null;
+      const number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function latestRtswValue(rows, field){
+      const valid = rows.map((row, index) => ({
+        row,
+        index,
+        value: toFiniteNumber(row[field]),
+        time: Date.parse(row.time_tag || '')
+      })).filter(item => item.value !== null);
+
+      if (!valid.length) return null;
+
+      // Prefer records from the spacecraft NOAA marked active.  If an active
+      // record has a temporary gap for this field, fall back to any valid source.
+      const active = valid.filter(item => item.row.active === true);
+      const pool = active.length ? active : valid;
+
+      pool.sort((a, b) => {
+        const ta = Number.isFinite(a.time) ? a.time : -Infinity;
+        const tb = Number.isFinite(b.time) ? b.time : -Infinity;
+        return (tb - ta) || (a.index - b.index);
+      });
+      return pool[0];
+    }
+
+    function setNumericMetric(id, observation, digits){
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = observation ? observation.value.toFixed(digits) : '—';
+    }
+
+    function clearImfState(){
       const bzEl = document.getElementById('imf-bz');
       if (bzEl){
-        if (isFinite(bz)){
-          bzEl.textContent = bz.toFixed(1);
-          bzEl.classList.remove('positive','negative');
-          bzEl.classList.add(bz < 0 ? 'negative' : 'positive');
-        } else {
-          bzEl.textContent = '—';
-          bzEl.classList.remove('positive','negative');
-        }
+        bzEl.textContent = '—';
+        bzEl.classList.remove('positive','negative');
       }
       const dirEl = document.getElementById('imf-dir');
-      if (dirEl){
-        if (isFinite(bz)) dirEl.textContent = bz < 0 ? 'southward' : 'northward';
-        else dirEl.textContent = '—';
-      }
+      if (dirEl) dirEl.textContent = '—';
       const warnEl = document.getElementById('imf-warning');
       if (warnEl){
-        if (isFinite(bz) && bz < -5){
+        warnEl.textContent = '';
+        warnEl.style.color = 'var(--muted)';
+      }
+    }
+
+    function updateWindMetrics(rows){
+      setNumericMetric('sw-speed', latestRtswValue(rows, 'proton_speed'), 0);
+      setNumericMetric('sw-density', latestRtswValue(rows, 'proton_density'), 1);
+      setNumericMetric('sw-temp', latestRtswValue(rows, 'proton_temperature'), 0);
+    }
+
+    function updateImfMetrics(rows){
+      const btObs = latestRtswValue(rows, 'bt');
+      const bzObs = latestRtswValue(rows, 'bz_gsm');
+      setNumericMetric('imf-bt', btObs, 1);
+
+      const bzEl = document.getElementById('imf-bz');
+      const dirEl = document.getElementById('imf-dir');
+      const warnEl = document.getElementById('imf-warning');
+
+      if (!bzObs){
+        clearImfState();
+        return;
+      }
+
+      const bz = bzObs.value;
+      if (bzEl){
+        bzEl.textContent = bz.toFixed(1);
+        bzEl.classList.remove('positive','negative');
+        bzEl.classList.add(bz < 0 ? 'negative' : 'positive');
+      }
+      if (dirEl) dirEl.textContent = bz < 0 ? 'southward' : 'northward';
+      if (warnEl){
+        if (bz < -5){
           warnEl.textContent = '⚠ Strong southward Bz may trigger geomagnetic activity';
           warnEl.style.color = 'var(--alert)';
         } else {
           warnEl.textContent = '';
           warnEl.style.color = 'var(--muted)';
         }
+      }
+    }
+
+    async function loadSolarWind(){
+      // Do not couple the two cards: one feed can still update when the other
+      // is temporarily unavailable.
+      const [windResult, magResult] = await Promise.allSettled([
+        fetchRtswRows(RTSW_WIND_URL, 'Solar-wind plasma'),
+        fetchRtswRows(RTSW_MAG_URL, 'IMF')
+      ]);
+
+      if (windResult.status === 'fulfilled'){
+        updateWindMetrics(windResult.value);
+      } else {
+        console.error('Solar-wind load error', windResult.reason);
+        setNumericMetric('sw-speed', null, 0);
+        setNumericMetric('sw-density', null, 1);
+        setNumericMetric('sw-temp', null, 0);
+      }
+
+      if (magResult.status === 'fulfilled'){
+        updateImfMetrics(magResult.value);
+      } else {
+        console.error('IMF load error', magResult.reason);
+        setNumericMetric('imf-bt', null, 1);
+        clearImfState();
+      }
+
+      if (windResult.status === 'rejected' && magResult.status === 'rejected'){
+        throw new Error('Both real-time solar-wind feeds are unavailable');
       }
     }
 
